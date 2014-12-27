@@ -53,12 +53,6 @@
   other    3 [])
 
 
-(defrecord Charactr [attributes
-                     name
-                     age
-                     service])
-
-
 ;; FIXME: Add Ranks to names
 (defn make-character []
   (let [stats (char-attr-map)
@@ -195,12 +189,21 @@
          :attributes
          (#(map % attributes))
          (map hexcode)
-         (apply str)))
-  Charactr
-  (upp [this]
-    (->> this
-         :attributes
-         (#(map % attributes))
-         (map hexcode)
          (apply str))))
+
+(map (juxt :name upp)
+     (take 10 (repeatedly make-character)))
+
+;;=>
+(["Istin Ahmoud" "66987A"]
+ ["Mayo Ordan" "485A6A"]
+ ["Ndsey Sassan" "CB4895"]
+ ["Mr. Wolf Eymour Lcolm" "A57768"]
+ ["Iver Rice I" "575788"]
+ ["Earnix Ogue II" "83954A"]
+ ["Joyce Gela Jr." "8B7676"]
+ ["Von Ocorrito Mmad Yanatoly, LCPT" "A5686C"]
+ ["Dr. Nette Enora, LMA" "98BB96"]
+ ["Sir Livier Rshi, LMA" "978638"])
+
 
