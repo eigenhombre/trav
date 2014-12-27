@@ -1,0 +1,4 @@
+#+TITLE: trav
+
+Generating of random characters (& eventually more) for a popular '80s
+era role playing game.
