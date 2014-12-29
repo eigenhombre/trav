@@ -221,226 +221,168 @@
 
 
 ;; Terms of service
-(defn survived-term? [char]
-  (let [stats (:attributes char)
-        {:keys [base-roll dms]} (->> char
-                                     :actual-service
-                                     (#(survival %)))]
-    (roll-with-dms-succeeds? base-roll dms stats)))
-
-
-(defn commissioned? [char]
-  (if (:commissioned? char)
-    true
-    (let [stats (:attributes char)
+(defn maybe-commission [char]
+  (cond
+   (not (:living? char)) char
+   (:commissioned? char) char
+   :else (let [stats (:attributes char)
           {:keys [base-roll dms]} (->> char
                                        :actual-service
                                        (#(commission %)))]
-      (roll-with-dms-succeeds? base-roll dms stats))))
+           (if (roll-with-dms-succeeds? base-roll dms stats)
+             (assoc char :commissioned? true)
+             char))))
 
 
 (defn maybe-promote [char]
-  (if-not (:commissioned? char)
+  (cond
+   (not (:living? char)) char
+   (not (:commissioned? char)) char
+   :else (let [stats (:attributes char)
+          {:keys [base-roll dms]} (->> char
+                                       :actual-service
+                                       (#(promotion %)))]
+           (if-not (roll-with-dms-succeeds? base-roll dms stats)
+             char
+             (update-in char [:rank] inc)))))
+
+
+(defn age [char]
+  (if-not (:living? char)
+    char
+    (update-in char [:age] + 4)))
+
+
+(defn maybe-kill [char]
+  (if-not (:living? char)
     char
     (let [stats (:attributes char)
           {:keys [base-roll dms]} (->> char
                                        :actual-service
-                                       (#(promotion %)))]
-      (if-not (roll-with-dms-succeeds? base-roll dms stats)
+                                       (#(survival %)))]
+      (if (roll-with-dms-succeeds? base-roll dms stats)
         char
-        (update-in char [:rank] inc)))))
+        (assoc char :living? false)))))
 
 
 (defn apply-term-of-service [char]
-  (if-not (:living? char)
-    char
-    (if-not (survived-term? char)
-      (-> char
-          (assoc :living? false)
-          (update-in [:age] + (rand-int 5)))
-      (if (commissioned? char)
-        (-> char
-            (update-in [:age] + 4)
-            (assoc :commissioned? true)
-            maybe-promote)
-        (-> char ;; Tough luck, survived but no promotion.
-            (update-in [:age] + 4))))))
+  (-> char
+      maybe-kill
+      maybe-commission
+      maybe-promote
+      age))
 
 
-(->> (make-character)
-     (iterate apply-term-of-service)
-     (take-while :living?)
-     vec)
+(repeatedly 10 #(->> (make-character)
+                     (iterate apply-term-of-service)
+                     (take 10)
+                     (map (juxt :name :living? :age :rank))
+                     vec))
+
 ;;=>
-[{:actual-service :merchant,
-  :age 18,
-  :name "Rdad Kimberly III",
-  :commissioned? false,
-  :living? true,
-  :rank 0,
-  :drafted? false,
-  :desired-service :merchant,
-  :gender :female,
-  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
- {:actual-service :merchant,
-  :age 22,
-  :name "Rdad Kimberly III",
-  :commissioned? true,
-  :living? true,
-  :rank 0,
-  :drafted? false,
-  :desired-service :merchant,
-  :gender :female,
-  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
- {:actual-service :merchant,
-  :age 26,
-  :name "Rdad Kimberly III",
-  :commissioned? true,
-  :living? true,
-  :rank 0,
-  :drafted? false,
-  :desired-service :merchant,
-  :gender :female,
-  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
- {:actual-service :merchant,
-  :age 30,
-  :name "Rdad Kimberly III",
-  :commissioned? true,
-  :living? true,
-  :rank 0,
-  :drafted? false,
-  :desired-service :merchant,
-  :gender :female,
-  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
- {:actual-service :merchant,
-  :age 34,
-  :name "Rdad Kimberly III",
-  :commissioned? true,
-  :living? true,
-  :rank 0,
-  :drafted? false,
-  :desired-service :merchant,
-  :gender :female,
-  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
- {:actual-service :merchant,
-  :age 38,
-  :name "Rdad Kimberly III",
-  :commissioned? true,
-  :living? true,
-  :rank 0,
-  :drafted? false,
-  :desired-service :merchant,
-  :gender :female,
-  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
- {:actual-service :merchant,
-  :age 42,
-  :name "Rdad Kimberly III",
-  :commissioned? true,
-  :living? true,
-  :rank 0,
-  :drafted? false,
-  :desired-service :merchant,
-  :gender :female,
-  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
- {:actual-service :merchant,
-  :age 46,
-  :name "Rdad Kimberly III",
-  :commissioned? true,
-  :living? true,
-  :rank 1,
-  :drafted? false,
-  :desired-service :merchant,
-  :gender :female,
-  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
- {:actual-service :merchant,
-  :age 50,
-  :name "Rdad Kimberly III",
-  :commissioned? true,
-  :living? true,
-  :rank 2,
-  :drafted? false,
-  :desired-service :merchant,
-  :gender :female,
-  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
- {:actual-service :merchant,
-  :age 54,
-  :name "Rdad Kimberly III",
-  :commissioned? true,
-  :living? true,
-  :rank 2,
-  :drafted? false,
-  :desired-service :merchant,
-  :gender :female,
-  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
- {:actual-service :merchant,
-  :age 58,
-  :name "Rdad Kimberly III",
-  :commissioned? true,
-  :living? true,
-  :rank 2,
-  :drafted? false,
-  :desired-service :merchant,
-  :gender :female,
-  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
- {:actual-service :merchant,
-  :age 62,
-  :name "Rdad Kimberly III",
-  :commissioned? true,
-  :living? true,
-  :rank 3,
-  :drafted? false,
-  :desired-service :merchant,
-  :gender :female,
-  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
- {:actual-service :merchant,
-  :age 66,
-  :name "Rdad Kimberly III",
-  :commissioned? true,
-  :living? true,
-  :rank 3,
-  :drafted? false,
-  :desired-service :merchant,
-  :gender :female,
-  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
- {:actual-service :merchant,
-  :age 70,
-  :name "Rdad Kimberly III",
-  :commissioned? true,
-  :living? true,
-  :rank 3,
-  :drafted? false,
-  :desired-service :merchant,
-  :gender :female,
-  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
- {:actual-service :merchant,
-  :age 74,
-  :name "Rdad Kimberly III",
-  :commissioned? true,
-  :living? true,
-  :rank 3,
-  :drafted? false,
-  :desired-service :merchant,
-  :gender :female,
-  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
- {:actual-service :merchant,
-  :age 78,
-  :name "Rdad Kimberly III",
-  :commissioned? true,
-  :living? true,
-  :rank 3,
-  :drafted? false,
-  :desired-service :merchant,
-  :gender :female,
-  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
- {:actual-service :merchant,
-  :age 82,
-  :name "Rdad Kimberly III",
-  :commissioned? true,
-  :living? true,
-  :rank 3,
-  :drafted? false,
-  :desired-service :merchant,
-  :gender :female,
-  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}]
+([["Tigger, LCPT" true 18 0]
+  ["Tigger, LCPT" true 22 0]
+  ["Tigger, LCPT" true 26 0]
+  ["Tigger, LCPT" true 30 0]
+  ["Tigger, LCPT" true 34 0]
+  ["Tigger, LCPT" true 38 0]
+  ["Tigger, LCPT" false 38 0]
+  ["Tigger, LCPT" false 38 0]
+  ["Tigger, LCPT" false 38 0]
+  ["Tigger, LCPT" false 38 0]]
+ [["Azel Rnard Alan" true 18 0]
+  ["Azel Rnard Alan" true 22 0]
+  ["Azel Rnard Alan" true 26 0]
+  ["Azel Rnard Alan" true 30 0]
+  ["Azel Rnard Alan" true 34 0]
+  ["Azel Rnard Alan" true 38 1]
+  ["Azel Rnard Alan" true 42 1]
+  ["Azel Rnard Alan" true 46 2]
+  ["Azel Rnard Alan" true 50 2]
+  ["Azel Rnard Alan" true 54 2]]
+ [["Mrs. Ernie Wahar I" true 18 0]
+  ["Mrs. Ernie Wahar I" true 22 0]
+  ["Mrs. Ernie Wahar I" true 26 0]
+  ["Mrs. Ernie Wahar I" false 26 0]
+  ["Mrs. Ernie Wahar I" false 26 0]
+  ["Mrs. Ernie Wahar I" false 26 0]
+  ["Mrs. Ernie Wahar I" false 26 0]
+  ["Mrs. Ernie Wahar I" false 26 0]
+  ["Mrs. Ernie Wahar I" false 26 0]
+  ["Mrs. Ernie Wahar I" false 26 0]]
+ [["Dr. Hari Nolis, LCPT" true 18 0]
+  ["Dr. Hari Nolis, LCPT" true 22 1]
+  ["Dr. Hari Nolis, LCPT" true 26 1]
+  ["Dr. Hari Nolis, LCPT" true 30 2]
+  ["Dr. Hari Nolis, LCPT" true 34 2]
+  ["Dr. Hari Nolis, LCPT" true 38 3]
+  ["Dr. Hari Nolis, LCPT" true 42 4]
+  ["Dr. Hari Nolis, LCPT" true 46 5]
+  ["Dr. Hari Nolis, LCPT" true 50 6]
+  ["Dr. Hari Nolis, LCPT" true 54 7]]
+ [["Oshi Ques Fumi Olas Ussell" true 18 0]
+  ["Oshi Ques Fumi Olas Ussell" true 22 1]
+  ["Oshi Ques Fumi Olas Ussell" true 26 1]
+  ["Oshi Ques Fumi Olas Ussell" true 30 1]
+  ["Oshi Ques Fumi Olas Ussell" true 34 2]
+  ["Oshi Ques Fumi Olas Ussell" true 38 3]
+  ["Oshi Ques Fumi Olas Ussell" true 42 3]
+  ["Oshi Ques Fumi Olas Ussell" true 46 4]
+  ["Oshi Ques Fumi Olas Ussell" true 50 5]
+  ["Oshi Ques Fumi Olas Ussell" true 54 6]]
+ [["Ms. Rkeer, LMT" true 18 0]
+  ["Ms. Rkeer, LMT" true 22 0]
+  ["Ms. Rkeer, LMT" true 26 0]
+  ["Ms. Rkeer, LMT" true 30 0]
+  ["Ms. Rkeer, LMT" false 30 0]
+  ["Ms. Rkeer, LMT" false 30 0]
+  ["Ms. Rkeer, LMT" false 30 0]
+  ["Ms. Rkeer, LMT" false 30 0]
+  ["Ms. Rkeer, LMT" false 30 0]
+  ["Ms. Rkeer, LMT" false 30 0]]
+ [["Suwandip Avendra" true 18 0]
+  ["Suwandip Avendra" false 18 0]
+  ["Suwandip Avendra" false 18 0]
+  ["Suwandip Avendra" false 18 0]
+  ["Suwandip Avendra" false 18 0]
+  ["Suwandip Avendra" false 18 0]
+  ["Suwandip Avendra" false 18 0]
+  ["Suwandip Avendra" false 18 0]
+  ["Suwandip Avendra" false 18 0]
+  ["Suwandip Avendra" false 18 0]]
+ [["Ramsey IV" true 18 0]
+  ["Ramsey IV" true 22 0]
+  ["Ramsey IV" true 26 1]
+  ["Ramsey IV" true 30 1]
+  ["Ramsey IV" true 34 2]
+  ["Ramsey IV" true 38 2]
+  ["Ramsey IV" true 42 3]
+  ["Ramsey IV" true 46 3]
+  ["Ramsey IV" true 50 3]
+  ["Ramsey IV" true 54 4]]
+ [["Sir Mone Nest II" true 18 0]
+  ["Sir Mone Nest II" true 22 0]
+  ["Sir Mone Nest II" true 26 0]
+  ["Sir Mone Nest II" true 30 1]
+  ["Sir Mone Nest II" true 34 2]
+  ["Sir Mone Nest II" true 38 3]
+  ["Sir Mone Nest II" true 42 3]
+  ["Sir Mone Nest II" false 42 3]
+  ["Sir Mone Nest II" false 42 3]
+  ["Sir Mone Nest II" false 42 3]]
+ [["Eliott Danielle Hyllos, MD" true 18 0]
+  ["Eliott Danielle Hyllos, MD" false 18 0]
+  ["Eliott Danielle Hyllos, MD" false 18 0]
+  ["Eliott Danielle Hyllos, MD" false 18 0]
+  ["Eliott Danielle Hyllos, MD" false 18 0]
+  ["Eliott Danielle Hyllos, MD" false 18 0]
+  ["Eliott Danielle Hyllos, MD" false 18 0]
+  ["Eliott Danielle Hyllos, MD" false 18 0]
+  ["Eliott Danielle Hyllos, MD" false 18 0]
+  ["Eliott Danielle Hyllos, MD" false 18 0]])
+
+
+
+
 
 
