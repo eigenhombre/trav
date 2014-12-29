@@ -232,23 +232,16 @@
       (roll-with-dms-succeeds? base-roll dms stats))))
 
 
-(defn promoted? [char]
+(defn maybe-promote [char]
   (if-not (:commissioned? char)
     char
-    char))
-
-
-(defn apply-term-of-service [char]
-  (if-not (:living? char)
-    char
-    (if-not (survived-term? char)
-      (-> char
-          (assoc :living? false)
-          (update-in [:age] + (rand-int 5)))
-      (-> char
-          (update-in [:age] + 4)
-          (assoc :commissioned? (commissioned? char))
-          (update-in [:rank])))))
+    (let [stats (:attributes char)
+          {:keys [base-roll dms]} (->> char
+                                       :actual-service
+                                       (#(promotion %)))]
+      (if-not (roll-with-dms-succeeds? base-roll dms stats)
+        char
+        (update-in char [:rank] inc)))))
 
 
 (defn apply-term-of-service [char]
@@ -262,116 +255,185 @@
         (-> char
             (update-in [:age] + 4)
             (assoc :commissioned? true)
-            (update-in [:rank] inc))
+            maybe-promote)
         (-> char ;; Tough luck, survived but no promotion.
             (update-in [:age] + 4))))))
 
 
 (->> (make-character)
      (iterate apply-term-of-service)
-     (take 10)
+     (take-while :living?)
      vec)
-
 ;;=>
-[{:actual-service :navy,
+[{:actual-service :merchant,
   :age 18,
-  :name "Rrie Gracey",
+  :name "Rdad Kimberly III",
   :commissioned? false,
   :living? true,
   :rank 0,
-  :drafted? true,
-  :desired-service :navy,
-  :gender :male,
-  :attributes {:ss 8, :ed 7, :in 7, :en 10, :dx 5, :st 6}}
- {:actual-service :navy,
+  :drafted? false,
+  :desired-service :merchant,
+  :gender :female,
+  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
+ {:actual-service :merchant,
   :age 22,
-  :name "Rrie Gracey",
-  :commissioned? false,
+  :name "Rdad Kimberly III",
+  :commissioned? true,
   :living? true,
   :rank 0,
-  :drafted? true,
-  :desired-service :navy,
-  :gender :male,
-  :attributes {:ss 8, :ed 7, :in 7, :en 10, :dx 5, :st 6}}
- {:actual-service :navy,
+  :drafted? false,
+  :desired-service :merchant,
+  :gender :female,
+  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
+ {:actual-service :merchant,
   :age 26,
-  :name "Rrie Gracey",
-  :commissioned? false,
+  :name "Rdad Kimberly III",
+  :commissioned? true,
   :living? true,
   :rank 0,
-  :drafted? true,
-  :desired-service :navy,
-  :gender :male,
-  :attributes {:ss 8, :ed 7, :in 7, :en 10, :dx 5, :st 6}}
- {:actual-service :navy,
+  :drafted? false,
+  :desired-service :merchant,
+  :gender :female,
+  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
+ {:actual-service :merchant,
   :age 30,
-  :name "Rrie Gracey",
+  :name "Rdad Kimberly III",
+  :commissioned? true,
+  :living? true,
+  :rank 0,
+  :drafted? false,
+  :desired-service :merchant,
+  :gender :female,
+  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
+ {:actual-service :merchant,
+  :age 34,
+  :name "Rdad Kimberly III",
+  :commissioned? true,
+  :living? true,
+  :rank 0,
+  :drafted? false,
+  :desired-service :merchant,
+  :gender :female,
+  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
+ {:actual-service :merchant,
+  :age 38,
+  :name "Rdad Kimberly III",
+  :commissioned? true,
+  :living? true,
+  :rank 0,
+  :drafted? false,
+  :desired-service :merchant,
+  :gender :female,
+  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
+ {:actual-service :merchant,
+  :age 42,
+  :name "Rdad Kimberly III",
+  :commissioned? true,
+  :living? true,
+  :rank 0,
+  :drafted? false,
+  :desired-service :merchant,
+  :gender :female,
+  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
+ {:actual-service :merchant,
+  :age 46,
+  :name "Rdad Kimberly III",
   :commissioned? true,
   :living? true,
   :rank 1,
-  :drafted? true,
-  :desired-service :navy,
-  :gender :male,
-  :attributes {:ss 8, :ed 7, :in 7, :en 10, :dx 5, :st 6}}
- {:actual-service :navy,
-  :age 34,
-  :name "Rrie Gracey",
+  :drafted? false,
+  :desired-service :merchant,
+  :gender :female,
+  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
+ {:actual-service :merchant,
+  :age 50,
+  :name "Rdad Kimberly III",
   :commissioned? true,
   :living? true,
   :rank 2,
-  :drafted? true,
-  :desired-service :navy,
-  :gender :male,
-  :attributes {:ss 8, :ed 7, :in 7, :en 10, :dx 5, :st 6}}
- {:actual-service :navy,
-  :age 38,
-  :name "Rrie Gracey",
+  :drafted? false,
+  :desired-service :merchant,
+  :gender :female,
+  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
+ {:actual-service :merchant,
+  :age 54,
+  :name "Rdad Kimberly III",
+  :commissioned? true,
+  :living? true,
+  :rank 2,
+  :drafted? false,
+  :desired-service :merchant,
+  :gender :female,
+  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
+ {:actual-service :merchant,
+  :age 58,
+  :name "Rdad Kimberly III",
+  :commissioned? true,
+  :living? true,
+  :rank 2,
+  :drafted? false,
+  :desired-service :merchant,
+  :gender :female,
+  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
+ {:actual-service :merchant,
+  :age 62,
+  :name "Rdad Kimberly III",
   :commissioned? true,
   :living? true,
   :rank 3,
-  :drafted? true,
-  :desired-service :navy,
-  :gender :male,
-  :attributes {:ss 8, :ed 7, :in 7, :en 10, :dx 5, :st 6}}
- {:actual-service :navy,
-  :age 42,
-  :name "Rrie Gracey",
+  :drafted? false,
+  :desired-service :merchant,
+  :gender :female,
+  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
+ {:actual-service :merchant,
+  :age 66,
+  :name "Rdad Kimberly III",
   :commissioned? true,
   :living? true,
-  :rank 4,
-  :drafted? true,
-  :desired-service :navy,
-  :gender :male,
-  :attributes {:ss 8, :ed 7, :in 7, :en 10, :dx 5, :st 6}}
- {:actual-service :navy,
-  :age 46,
-  :name "Rrie Gracey",
+  :rank 3,
+  :drafted? false,
+  :desired-service :merchant,
+  :gender :female,
+  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
+ {:actual-service :merchant,
+  :age 70,
+  :name "Rdad Kimberly III",
   :commissioned? true,
   :living? true,
-  :rank 5,
-  :drafted? true,
-  :desired-service :navy,
-  :gender :male,
-  :attributes {:ss 8, :ed 7, :in 7, :en 10, :dx 5, :st 6}}
- {:actual-service :navy,
-  :age 50,
-  :name "Rrie Gracey",
+  :rank 3,
+  :drafted? false,
+  :desired-service :merchant,
+  :gender :female,
+  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
+ {:actual-service :merchant,
+  :age 74,
+  :name "Rdad Kimberly III",
   :commissioned? true,
   :living? true,
-  :rank 6,
-  :drafted? true,
-  :desired-service :navy,
-  :gender :male,
-  :attributes {:ss 8, :ed 7, :in 7, :en 10, :dx 5, :st 6}}
- {:actual-service :navy,
-  :age 54,
-  :name "Rrie Gracey",
+  :rank 3,
+  :drafted? false,
+  :desired-service :merchant,
+  :gender :female,
+  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
+ {:actual-service :merchant,
+  :age 78,
+  :name "Rdad Kimberly III",
   :commissioned? true,
   :living? true,
-  :rank 7,
-  :drafted? true,
-  :desired-service :navy,
-  :gender :male,
-  :attributes {:ss 8, :ed 7, :in 7, :en 10, :dx 5, :st 6}}]
+  :rank 3,
+  :drafted? false,
+  :desired-service :merchant,
+  :gender :female,
+  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}
+ {:actual-service :merchant,
+  :age 82,
+  :name "Rdad Kimberly III",
+  :commissioned? true,
+  :living? true,
+  :rank 3,
+  :drafted? false,
+  :desired-service :merchant,
+  :gender :female,
+  :attributes {:ss 7, :ed 5, :in 8, :en 6, :dx 8, :st 8}}]
 
 
