@@ -15,19 +15,6 @@
   `(def ~name (map keywordize (quote ~syms))))
 
 
-(defcoll attributes ST DX EN IN ED SS)
-(defcoll services navy marines army scouts merchant other)
-
-
-(defn char-attr-map []
-  (zipmap attributes (take (count attributes)
-                           (repeatedly d))))
-
-
-(defn name-maker [] (first (funny-name-maker)))
-
-
-
 (defn- row-vec [[service base-roll dms]]
   [(keyword service) {:base-roll (if (= base-roll '-)
                                    Double/POSITIVE_INFINITY
@@ -45,6 +32,10 @@
               (mapcat row-vec)
               (apply hash-map)))
        ~tname))
+
+
+(defcoll attributes ST DX EN IN ED SS)
+(defcoll services navy marines army scouts merchant other)
 
 
 (deftable enlistment
@@ -72,6 +63,23 @@
   scouts   -  []
   merchant 4  [IN 6 -> +1]
   other    -  [])
+
+
+(deftable promotion
+  navy     8  [ED 8 -> +1]
+  marines  9  [SS 8 -> +1]
+  army     6  [ED 7 -> +1]
+  scouts   -  []
+  merchant 10 [IN 9 -> +1]
+  other    -  [])
+
+
+(defn char-attr-map []
+  (zipmap attributes (take (count attributes)
+                           (repeatedly d))))
+
+
+(defn name-maker [] (first (funny-name-maker)))
 
 
 (defn determine-gender []
@@ -120,95 +128,56 @@
      :drafted? drafted?
      :living? true
      :commissioned? false
+     :rank 0
      :name nom}))
 
 
 (->> make-character
      repeatedly
-     (take 10)
+     (take 4)
      vec)
 
 ;;=>
-[{:age 18,
-  :gender :female,
-  :attributes {:ss 12, :ed 6, :in 3, :en 7, :dx 7, :st 7},
+[{:actual-service :scouts,
+  :age 18,
+  :name "Suwandip Egory",
+  :commissioned? false,
+  :living? true,
+  :rank 0,
+  :drafted? false,
   :desired-service :scouts,
-  :actual-service :scouts,
-  :drafted? false,
-  :living? true,
-  :name "Von Miss Yllos Ltos, LCPT"}
- {:age 18,
   :gender :female,
-  :attributes {:ss 9, :ed 8, :in 7, :en 7, :dx 4, :st 7},
-  :desired-service :navy,
-  :actual-service :navy,
-  :drafted? false,
+  :attributes {:ss 7, :ed 8, :in 7, :en 10, :dx 3, :st 5}}
+ {:actual-service :marines,
+  :age 18,
+  :name "Lainer Think",
+  :commissioned? false,
   :living? true,
-  :name "Jeri Oore"}
- {:age 18,
-  :gender :male,
-  :attributes {:ss 11, :ed 10, :in 4, :en 5, :dx 7, :st 6},
+  :rank 0,
+  :drafted? false,
   :desired-service :marines,
-  :actual-service :navy,
-  :drafted? true,
-  :living? true,
-  :name "Sir Inos Roze"}
- {:age 18,
-  :gender :female,
-  :attributes {:ss 8, :ed 7, :in 10, :en 6, :dx 8, :st 11},
-  :desired-service :army,
-  :actual-service :army,
-  :drafted? false,
-  :living? true,
-  :name "Aurie Meehan V"}
- {:age 18,
-  :gender :female,
-  :attributes {:ss 7, :ed 8, :in 3, :en 6, :dx 4, :st 8},
-  :desired-service :other,
-  :actual-service :other,
-  :drafted? false,
-  :living? true,
-  :name "Effrey Kevin Urtis Lius Hsuan"}
- {:age 18,
   :gender :male,
-  :attributes {:ss 3, :ed 8, :in 4, :en 7, :dx 8, :st 10},
-  :desired-service :navy,
-  :actual-service :navy,
+  :attributes {:ss 7, :ed 6, :in 6, :en 5, :dx 4, :st 7}}
+ {:actual-service :scouts,
+  :age 18,
+  :name "Dale Riam Erren",
+  :commissioned? false,
+  :living? true,
+  :rank 0,
   :drafted? false,
-  :living? true,
-  :name "Allan Athnakumar, LMA"}
- {:age 18,
-  :gender :male,
-  :attributes {:ss 7, :ed 11, :in 10, :en 6, :dx 8, :st 4},
-  :desired-service :marines,
-  :actual-service :scouts,
-  :drafted? true,
-  :living? true,
-  :name "Gail Stlik Daresh, Ph.D."}
- {:age 18,
+  :desired-service :scouts,
   :gender :other,
-  :attributes {:ss 6, :ed 9, :in 8, :en 4, :dx 8, :st 3},
-  :desired-service :other,
-  :actual-service :other,
+  :attributes {:ss 6, :ed 11, :in 9, :en 5, :dx 4, :st 4}}
+ {:actual-service :army,
+  :age 18,
+  :name "Atsan Itcher Danny Rcia Lenny",
+  :commissioned? false,
+  :living? true,
+  :rank 0,
   :drafted? false,
-  :living? true,
-  :name "Gger Alus Enkata Evilles Eruyuki"}
- {:age 18,
+  :desired-service :army,
   :gender :male,
-  :attributes {:ss 7, :ed 5, :in 12, :en 8, :dx 10, :st 7},
-  :desired-service :merchant,
-  :actual-service :marines,
-  :drafted? true,
-  :living? true,
-  :name "Helen Ckey"}
- {:age 18,
-  :gender :male,
-  :attributes {:ss 6, :ed 2, :in 5, :en 4, :dx 9, :st 4},
-  :desired-service :navy,
-  :actual-service :other,
-  :drafted? true,
-  :living? true,
-  :name "Lyde Edward"}]
+  :attributes {:ss 5, :ed 12, :in 5, :en 4, :dx 4, :st 11}}]
 
 
 (defprotocol UPP
@@ -216,13 +185,14 @@
 
 
 (extend-protocol UPP
-  clojure.lang.PersistentArrayMap
+  clojure.lang.PersistentHashMap
   (upp [this]
     (->> this
          :attributes
          (#(map % attributes))
          (map hexcode)
          (apply str))))
+
 
 (->> make-character
      repeatedly
@@ -252,7 +222,7 @@
     (roll-with-dms-succeeds? base-roll dms stats)))
 
 
-(defn determine-commission [char]
+(defn commissioned? [char]
   (if (:commissioned? char)
     true
     (let [stats (:attributes char)
@@ -260,6 +230,12 @@
                                        :actual-service
                                        (#(commission %)))]
       (roll-with-dms-succeeds? base-roll dms stats))))
+
+
+(defn promoted? [char]
+  (if-not (:commissioned? char)
+    char
+    char))
 
 
 (defn apply-term-of-service [char]
@@ -271,4 +247,131 @@
           (update-in [:age] + (rand-int 5)))
       (-> char
           (update-in [:age] + 4)
-          (assoc :commissioned? (determine-commission char))))))
+          (assoc :commissioned? (commissioned? char))
+          (update-in [:rank])))))
+
+
+(defn apply-term-of-service [char]
+  (if-not (:living? char)
+    char
+    (if-not (survived-term? char)
+      (-> char
+          (assoc :living? false)
+          (update-in [:age] + (rand-int 5)))
+      (if (commissioned? char)
+        (-> char
+            (update-in [:age] + 4)
+            (assoc :commissioned? true)
+            (update-in [:rank] inc))
+        (-> char ;; Tough luck, survived but no promotion.
+            (update-in [:age] + 4))))))
+
+
+(->> (make-character)
+     (iterate apply-term-of-service)
+     (take 10)
+     vec)
+
+;;=>
+[{:actual-service :navy,
+  :age 18,
+  :name "Rrie Gracey",
+  :commissioned? false,
+  :living? true,
+  :rank 0,
+  :drafted? true,
+  :desired-service :navy,
+  :gender :male,
+  :attributes {:ss 8, :ed 7, :in 7, :en 10, :dx 5, :st 6}}
+ {:actual-service :navy,
+  :age 22,
+  :name "Rrie Gracey",
+  :commissioned? false,
+  :living? true,
+  :rank 0,
+  :drafted? true,
+  :desired-service :navy,
+  :gender :male,
+  :attributes {:ss 8, :ed 7, :in 7, :en 10, :dx 5, :st 6}}
+ {:actual-service :navy,
+  :age 26,
+  :name "Rrie Gracey",
+  :commissioned? false,
+  :living? true,
+  :rank 0,
+  :drafted? true,
+  :desired-service :navy,
+  :gender :male,
+  :attributes {:ss 8, :ed 7, :in 7, :en 10, :dx 5, :st 6}}
+ {:actual-service :navy,
+  :age 30,
+  :name "Rrie Gracey",
+  :commissioned? true,
+  :living? true,
+  :rank 1,
+  :drafted? true,
+  :desired-service :navy,
+  :gender :male,
+  :attributes {:ss 8, :ed 7, :in 7, :en 10, :dx 5, :st 6}}
+ {:actual-service :navy,
+  :age 34,
+  :name "Rrie Gracey",
+  :commissioned? true,
+  :living? true,
+  :rank 2,
+  :drafted? true,
+  :desired-service :navy,
+  :gender :male,
+  :attributes {:ss 8, :ed 7, :in 7, :en 10, :dx 5, :st 6}}
+ {:actual-service :navy,
+  :age 38,
+  :name "Rrie Gracey",
+  :commissioned? true,
+  :living? true,
+  :rank 3,
+  :drafted? true,
+  :desired-service :navy,
+  :gender :male,
+  :attributes {:ss 8, :ed 7, :in 7, :en 10, :dx 5, :st 6}}
+ {:actual-service :navy,
+  :age 42,
+  :name "Rrie Gracey",
+  :commissioned? true,
+  :living? true,
+  :rank 4,
+  :drafted? true,
+  :desired-service :navy,
+  :gender :male,
+  :attributes {:ss 8, :ed 7, :in 7, :en 10, :dx 5, :st 6}}
+ {:actual-service :navy,
+  :age 46,
+  :name "Rrie Gracey",
+  :commissioned? true,
+  :living? true,
+  :rank 5,
+  :drafted? true,
+  :desired-service :navy,
+  :gender :male,
+  :attributes {:ss 8, :ed 7, :in 7, :en 10, :dx 5, :st 6}}
+ {:actual-service :navy,
+  :age 50,
+  :name "Rrie Gracey",
+  :commissioned? true,
+  :living? true,
+  :rank 6,
+  :drafted? true,
+  :desired-service :navy,
+  :gender :male,
+  :attributes {:ss 8, :ed 7, :in 7, :en 10, :dx 5, :st 6}}
+ {:actual-service :navy,
+  :age 54,
+  :name "Rrie Gracey",
+  :commissioned? true,
+  :living? true,
+  :rank 7,
+  :drafted? true,
+  :desired-service :navy,
+  :gender :male,
+  :attributes {:ss 8, :ed 7, :in 7, :en 10, :dx 5, :st 6}}]
+
+
