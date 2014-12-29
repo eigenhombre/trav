@@ -194,23 +194,30 @@
          (apply str))))
 
 
+(defn as-syms [s] (vec (map symbol (clojure.string/split s #" "))))
+
+
+;; Example - character names + UPPs:
 (->> make-character
      repeatedly
      (take 10)
-     (map (juxt :name upp))
+     (map (juxt (comp as-syms :name) (comp as-syms upp)))
+     (map (partial apply concat))
+     (map vec)
      vec)
 
 ;;=>
-[["Tibartfast Ised" "2A9844"]
- ["Mr. Jisheng Ffie" "862A4A"]
- ["Miss Izchak Stic" "66A97A"]
- ["Sir Miss Dall Spock Hryn" "8B9B6B"]
- ["Mme. Kate" "779A56"]
- ["Vonne" "877768"]
- ["Arter" "8776A5"]
- ["M. Amos Nguyen, Esq." "97A6BA"]
- ["Liyuan Sarah" "A47677"]
- ["Shahid Jones" "8552B6"]]
+[[Unnard Ergio, MD 5374B4]
+ [Llan Ivek C66C52]
+ [Orton Thleen Judith 5755AA]
+ [Hmet Mberly Dale A94696]
+ [Ophe Jingbai Lentinos II 767967]
+ [Sr. Nrichael Ustin 538489]
+ [Sir Onal Eeks Udio 88999B]
+ [Idney Rvillermo Assos Ierett Moore A84489]
+ [Juri Vincenzo 983758]
+ [Mme. Adley Nifer Sr. 849568]]
+
 
 
 ;; Terms of service
