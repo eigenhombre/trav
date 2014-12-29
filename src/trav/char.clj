@@ -28,8 +28,10 @@
 
 
 
-(defn- row-vec [[service roll-to-enlist dms]]
-  [(keyword service) {:roll-to-enlist roll-to-enlist
+(defn- row-vec [[service base-roll dms]]
+  [(keyword service) {:base-roll (if (= base-roll '-)
+                                   Double/POSITIVE_INFINITY
+                                   base-roll)
                       :dms (map (fn [[attr thresh _ dm]]
                                   {:attr (keywordize attr)
                                    :thresh thresh
@@ -38,10 +40,11 @@
 
 
 (defmacro deftable [tname & service-rows]
-  `(def ~tname
-     (->> (quote ~(partition 3 service-rows))
-          (mapcat row-vec)
-          (apply hash-map))))
+  `(do (def ~tname
+         (->> (quote ~(partition 3 service-rows))
+              (mapcat row-vec)
+              (apply hash-map)))
+       ~tname))
 
 
 (deftable enlistment
@@ -51,6 +54,51 @@
   scouts   7 [IN 6 -> +1, ST 8 -> +2]
   merchant 7 [ST 7 -> +1, IN 6 -> +2]
   other    3 [])
+
+
+(deftable survival
+  navy     5 [IN 7 -> +2]
+  marines  6 [EN 8 -> +2]
+  army     5 [ED 6 -> +2]
+  scouts   7 [EN 9 -> +2]
+  merchant 5 [IN 7 -> +2]
+  other    5 [IN 9 -> +2])
+
+
+(deftable commission
+  navy     10 [SS 9 -> +1]
+  marines  9  [ED 7 -> +1]
+  army     5  [EN 7 -> +1]
+  scouts   -  []
+  merchant 4  [IN 6 -> +1]
+  other    -  [])
+
+
+(defn determine-gender []
+  (rand-nth (concat (repeat 10 :male)
+                    (repeat 10 :female)
+                    [:other])))
+
+
+(defn roll-with-dms-succeeds? [base-roll dms stats]
+  (let [applicable-dms (apply +
+                              (for [{:keys [attr thresh dm]} dms
+                                      :when (>= (stats attr) thresh)]
+                                dm))]
+    (>= (+ applicable-dms (d 2)) base-roll)))
+
+
+(defn determine-service [stats]
+  (let [desired-service (rand-nth services)
+        service-dms (-> enlistment
+                        desired-service
+                        :dms)
+        success? (roll-with-dms-succeeds?
+                  (-> enlistment desired-service :base-roll)
+                  service-dms
+                  stats)
+        actual-service (if success? desired-service (rand-nth services))]
+    [desired-service (not success?) actual-service]))
 
 
 ;; FIXME: Add Ranks to names
@@ -63,119 +111,104 @@
         nom (cond knighted? (str "Sir " nom)
                   baron? (str "Von " nom)
                   :else nom)
-        desired-service (rand-nth services)
-        service-dms (-> enlistment
-                        desired-service
-                        :dms)
-        applicable-dms (apply + (for [{:keys [attr thresh dm]} service-dms
-                                      :when (>= (stats attr) thresh)]
-                                  dm))
-        enlistment-roll (d 2)
-        success? (>= (+ applicable-dms enlistment-roll)
-                     (-> enlistment desired-service :roll-to-enlist))
-        actual-service (if success? desired-service (rand-nth services))]
-    ;(->Charactr stats 18 nom)
-    {:attributes stats
+        [desired-service drafted? actual-service] (determine-service stats)]
+    {:age 18
+     :gender (determine-gender)
+     :attributes stats
      :desired-service desired-service
-     :service-dms service-dms
-     :applicable-dms applicable-dms
-     :enlistment-roll enlistment-roll
-     :successful-enlistment success?
      :actual-service actual-service
+     :drafted? drafted?
+     :living? true
+     :commissioned? false
      :name nom}))
 
 
-(take 10 (repeatedly make-character))
+(->> make-character
+     repeatedly
+     (take 10)
+     vec)
 
 ;;=>
-[{:attributes {:ss 8, :ed 11, :in 4, :en 11, :dx 5, :st 10},
-  :desired-service :navy,
-  :service-dms
-  ({:attr :in, :thresh 8, :dm 1} {:attr :ed, :thresh 9, :dm 2}),
-  :applicable-dms 2,
-  :enlistment-roll 7,
-  :successful-enlistment true,
-  :actual-service :navy,
-  :name "Herr Nette Dorothy Nifer Kylo Ratap Jr."}
- {:attributes {:ss 6, :ed 7, :in 5, :en 6, :dx 7, :st 5},
-  :desired-service :army,
-  :service-dms
-  ({:attr :dx, :thresh 6, :dm 1} {:attr :en, :thresh 5, :dm 2}),
-  :applicable-dms 3,
-  :enlistment-roll 7,
-  :successful-enlistment true,
-  :actual-service :army,
-  :name "Tandy, LMA"}
- {:attributes {:ss 4, :ed 6, :in 7, :en 3, :dx 9, :st 10},
-  :desired-service :navy,
-  :service-dms
-  ({:attr :in, :thresh 8, :dm 1} {:attr :ed, :thresh 9, :dm 2}),
-  :applicable-dms 0,
-  :enlistment-roll 5,
-  :successful-enlistment false,
-  :actual-service :marines,
-  :name "Eonard III"}
- {:attributes {:ss 6, :ed 9, :in 8, :en 10, :dx 11, :st 3},
-  :desired-service :navy,
-  :service-dms
-  ({:attr :in, :thresh 8, :dm 1} {:attr :ed, :thresh 9, :dm 2}),
-  :applicable-dms 3,
-  :enlistment-roll 10,
-  :successful-enlistment true,
-  :actual-service :navy,
-  :name "Joni Trace"}
- {:attributes {:ss 7, :ed 7, :in 11, :en 6, :dx 7, :st 8},
-  :desired-service :other,
-  :service-dms (),
-  :applicable-dms 0,
-  :enlistment-roll 9,
-  :successful-enlistment true,
-  :actual-service :other,
-  :name "Sir Julia Esper"}
- {:attributes {:ss 11, :ed 8, :in 5, :en 6, :dx 2, :st 8},
-  :desired-service :other,
-  :service-dms (),
-  :applicable-dms 0,
-  :enlistment-roll 9,
-  :successful-enlistment true,
-  :actual-service :other,
-  :name "Sir N-christi Iete"}
- {:attributes {:ss 4, :ed 4, :in 8, :en 6, :dx 4, :st 11},
-  :desired-service :army,
-  :service-dms
-  ({:attr :dx, :thresh 6, :dm 1} {:attr :en, :thresh 5, :dm 2}),
-  :applicable-dms 2,
-  :enlistment-roll 6,
-  :successful-enlistment true,
-  :actual-service :army,
-  :name "Jingbai Louiqa, Esq."}
- {:attributes {:ss 4, :ed 7, :in 8, :en 4, :dx 6, :st 8},
-  :desired-service :army,
-  :service-dms
-  ({:attr :dx, :thresh 6, :dm 1} {:attr :en, :thresh 5, :dm 2}),
-  :applicable-dms 1,
-  :enlistment-roll 8,
-  :successful-enlistment true,
-  :actual-service :army,
-  :name "Sr. Nguyen Gideon Runo"}
- {:attributes {:ss 8, :ed 5, :in 7, :en 10, :dx 3, :st 7},
-  :desired-service :merchant,
-  :service-dms
-  ({:attr :st, :thresh 7, :dm 1} {:attr :in, :thresh 6, :dm 2}),
-  :applicable-dms 3,
-  :enlistment-roll 10,
-  :successful-enlistment true,
-  :actual-service :merchant,
-  :name "Miles Egge Avid"}
- {:attributes {:ss 5, :ed 10, :in 6, :en 7, :dx 7, :st 3},
+[{:age 18,
+  :gender :female,
+  :attributes {:ss 12, :ed 6, :in 3, :en 7, :dx 7, :st 7},
   :desired-service :scouts,
-  :service-dms
-  ({:attr :in, :thresh 6, :dm 1} {:attr :st, :thresh 8, :dm 2}),
-  :applicable-dms 1,
-  :enlistment-roll 9,
-  :successful-enlistment true,
   :actual-service :scouts,
-  :name "Dhar Malcolm"}]
+  :drafted? false,
+  :living? true,
+  :name "Von Miss Yllos Ltos, LCPT"}
+ {:age 18,
+  :gender :female,
+  :attributes {:ss 9, :ed 8, :in 7, :en 7, :dx 4, :st 7},
+  :desired-service :navy,
+  :actual-service :navy,
+  :drafted? false,
+  :living? true,
+  :name "Jeri Oore"}
+ {:age 18,
+  :gender :male,
+  :attributes {:ss 11, :ed 10, :in 4, :en 5, :dx 7, :st 6},
+  :desired-service :marines,
+  :actual-service :navy,
+  :drafted? true,
+  :living? true,
+  :name "Sir Inos Roze"}
+ {:age 18,
+  :gender :female,
+  :attributes {:ss 8, :ed 7, :in 10, :en 6, :dx 8, :st 11},
+  :desired-service :army,
+  :actual-service :army,
+  :drafted? false,
+  :living? true,
+  :name "Aurie Meehan V"}
+ {:age 18,
+  :gender :female,
+  :attributes {:ss 7, :ed 8, :in 3, :en 6, :dx 4, :st 8},
+  :desired-service :other,
+  :actual-service :other,
+  :drafted? false,
+  :living? true,
+  :name "Effrey Kevin Urtis Lius Hsuan"}
+ {:age 18,
+  :gender :male,
+  :attributes {:ss 3, :ed 8, :in 4, :en 7, :dx 8, :st 10},
+  :desired-service :navy,
+  :actual-service :navy,
+  :drafted? false,
+  :living? true,
+  :name "Allan Athnakumar, LMA"}
+ {:age 18,
+  :gender :male,
+  :attributes {:ss 7, :ed 11, :in 10, :en 6, :dx 8, :st 4},
+  :desired-service :marines,
+  :actual-service :scouts,
+  :drafted? true,
+  :living? true,
+  :name "Gail Stlik Daresh, Ph.D."}
+ {:age 18,
+  :gender :other,
+  :attributes {:ss 6, :ed 9, :in 8, :en 4, :dx 8, :st 3},
+  :desired-service :other,
+  :actual-service :other,
+  :drafted? false,
+  :living? true,
+  :name "Gger Alus Enkata Evilles Eruyuki"}
+ {:age 18,
+  :gender :male,
+  :attributes {:ss 7, :ed 5, :in 12, :en 8, :dx 10, :st 7},
+  :desired-service :merchant,
+  :actual-service :marines,
+  :drafted? true,
+  :living? true,
+  :name "Helen Ckey"}
+ {:age 18,
+  :gender :male,
+  :attributes {:ss 6, :ed 2, :in 5, :en 4, :dx 9, :st 4},
+  :desired-service :navy,
+  :actual-service :other,
+  :drafted? true,
+  :living? true,
+  :name "Lyde Edward"}]
 
 
 (defprotocol UPP
@@ -191,19 +224,51 @@
          (map hexcode)
          (apply str))))
 
-(map (juxt :name upp)
-     (take 10 (repeatedly make-character)))
+(->> make-character
+     repeatedly
+     (take 10)
+     (map (juxt :name upp))
+     vec)
 
 ;;=>
-(["Istin Ahmoud" "66987A"]
- ["Mayo Ordan" "485A6A"]
- ["Ndsey Sassan" "CB4895"]
- ["Mr. Wolf Eymour Lcolm" "A57768"]
- ["Iver Rice I" "575788"]
- ["Earnix Ogue II" "83954A"]
- ["Joyce Gela Jr." "8B7676"]
- ["Von Ocorrito Mmad Yanatoly, LCPT" "A5686C"]
- ["Dr. Nette Enora, LMA" "98BB96"]
- ["Sir Livier Rshi, LMA" "978638"])
+[["Tibartfast Ised" "2A9844"]
+ ["Mr. Jisheng Ffie" "862A4A"]
+ ["Miss Izchak Stic" "66A97A"]
+ ["Sir Miss Dall Spock Hryn" "8B9B6B"]
+ ["Mme. Kate" "779A56"]
+ ["Vonne" "877768"]
+ ["Arter" "8776A5"]
+ ["M. Amos Nguyen, Esq." "97A6BA"]
+ ["Liyuan Sarah" "A47677"]
+ ["Shahid Jones" "8552B6"]]
 
 
+;; Terms of service
+(defn survived-term? [char]
+  (let [stats (:attributes char)
+        {:keys [base-roll dms]} (->> char
+                                     :actual-service
+                                     (#(survival %)))]
+    (roll-with-dms-succeeds? base-roll dms stats)))
+
+
+(defn determine-commission [char]
+  (if (:commissioned? char)
+    true
+    (let [stats (:attributes char)
+          {:keys [base-roll dms]} (->> char
+                                       :actual-service
+                                       (#(commission %)))]
+      (roll-with-dms-succeeds? base-roll dms stats))))
+
+
+(defn apply-term-of-service [char]
+  (if-not (:living? char)
+    char
+    (if-not (survived-term? char)
+      (-> char
+          (assoc :living? false)
+          (update-in [:age] + (rand-int 5)))
+      (-> char
+          (update-in [:age] + 4)
+          (assoc :commissioned? (determine-commission char))))))
