@@ -1,6 +1,6 @@
 (ns trav.char
   (:require [trav.dice :refer [d]]
-            [trav.util :refer [hexcode]]
+            [trav.util :refer [hexcode take-until]]
             [namejen.names :refer [funny-name-maker]]))
 
 
@@ -74,6 +74,15 @@
   other    -  [])
 
 
+(def-service-table reinlist
+  navy     6 []
+  marines  6 []
+  army     7 []
+  scouts   3 []
+  merchant 4 []
+  other    5 [])
+
+
 (defn selection-row-vec [[svc & elts]]
   [(keyword svc) (map #(if (= % '-) nil %) elts)])
 
@@ -132,7 +141,7 @@
 
 
 ;; FIXME: Add Ranks to names
-(defn make-character []
+(defn starting-character []
   (let [stats (char-attr-map)
         nom (name-maker)
         soc (get stats :ss)
@@ -150,12 +159,13 @@
      :drafted? drafted?
      :living? true
      :commissioned? false
+     :reinlisting? true
      :rank 0
      :rank-name nil
      :name nom}))
 
 
-(->> make-character
+(->> starting-character
      repeatedly
      (take 4)
      vec)
@@ -221,7 +231,7 @@
 
 
 ;; Example - character names + UPPs:
-(->> make-character
+(->> starting-character
      repeatedly
      (take 10)
      (map vec)
@@ -243,14 +253,15 @@
     (if rank-name
       (-> char
           (update-in [:rank] inc)
-          (assoc :rank-name rank-name))
+          (assoc :rank-name (str rank-name)))
       char)))
 
 
 (defn maybe-promote [char]
   (cond
    (not (:living? char)) char
-   (:commissioned? char) (if (roll-for-service-table-succeeds? promotion char)
+   (:commissioned? char) (if (roll-for-service-table-succeeds?
+                              promotion char)
                            (maybe-increase-rank char)
                            char)
    :else (if (roll-for-service-table-succeeds? commission char)
@@ -274,126 +285,278 @@
       (assoc char :living? false))))
 
 
+(defn maybe-reinlist [char]
+  (if-not (:living? char)
+    char
+    (let [wants-to-reinlist (rand-nth [true true true false])
+          stats (:attributes char)
+          {:keys [base-roll _]} (->> char
+                                     :actual-service
+                                     (#(reinlist %)))
+          roll (d 2)
+          reinlisting? (or (= roll 12)
+                           (and wants-to-reinlist (>= roll base-roll)))]
+      (assoc char :reinlisting? reinlisting?))))
+
+
 (defn apply-term-of-service [char]
   (-> char
       maybe-kill
       maybe-promote
+      maybe-reinlist
+      ;; TODO: skills
+      ;; TODO: posessions
+      ;; TODO: aging
       age))
 
 
-(->> (make-character)
-     (iterate apply-term-of-service)
-     (take 10)
-     vec)
+(defn make-character []
+  (->> (starting-character)
+       (iterate apply-term-of-service)
+       (take-until (fn [m] (or (not (:reinlisting? m))
+                               (not (:living? m)))))
+       last))
+
+(vec (repeatedly 20 make-character))
 
 ;;=>
-[{:actual-service :army,
-  :age 18,
-  :name "Alan Annon",
+[{:reinlisting? false,
+  :actual-service :other,
+  :age 22,
+  :name "Dr. Ickey Erik Kinchao, LMA",
   :commissioned? false,
   :living? true,
   :rank 0,
   :drafted? false,
   :rank-name nil,
+  :desired-service :other,
+  :gender :female,
+  :attributes {:ss 8, :ed 8, :in 6, :en 7, :dx 7, :st 8}}
+ {:reinlisting? true,
+  :actual-service :scouts,
+  :age 18,
+  :name "Kemal Ones N-pierette I",
+  :commissioned? false,
+  :living? false,
+  :rank 0,
+  :drafted? false,
+  :rank-name nil,
+  :desired-service :scouts,
+  :gender :male,
+  :attributes {:ss 7, :ed 5, :in 7, :en 12, :dx 10, :st 7}}
+ {:reinlisting? true,
+  :actual-service :army,
+  :age 18,
+  :name "Herr Lijah Ndries",
+  :commissioned? false,
+  :living? false,
+  :rank 0,
+  :drafted? false,
+  :rank-name nil,
   :desired-service :army,
   :gender :male,
-  :attributes {:ss 5, :ed 5, :in 11, :en 7, :dx 5, :st 4}}
- {:actual-service :army,
+  :attributes {:ss 7, :ed 3, :in 11, :en 11, :dx 10, :st 12}}
+ {:reinlisting? false,
+  :actual-service :marines,
   :age 22,
-  :name "Alan Annon",
-  :commissioned? true,
+  :name "Yros Thew",
+  :commissioned? false,
   :living? true,
-  :rank 1,
+  :rank 0,
   :drafted? false,
-  :rank-name Lieutenant,
-  :desired-service :army,
-  :gender :male,
-  :attributes {:ss 5, :ed 5, :in 11, :en 7, :dx 5, :st 4}}
- {:actual-service :army,
-  :age 26,
-  :name "Alan Annon",
-  :commissioned? true,
-  :living? true,
-  :rank 1,
-  :drafted? false,
-  :rank-name Lieutenant,
-  :desired-service :army,
-  :gender :male,
-  :attributes {:ss 5, :ed 5, :in 11, :en 7, :dx 5, :st 4}}
- {:actual-service :army,
+  :rank-name nil,
+  :desired-service :marines,
+  :gender :female,
+  :attributes {:ss 7, :ed 3, :in 7, :en 8, :dx 9, :st 9}}
+ {:reinlisting? false,
+  :actual-service :other,
   :age 30,
-  :name "Alan Annon",
-  :commissioned? true,
+  :name "Laclypse",
+  :commissioned? false,
   :living? true,
-  :rank 1,
+  :rank 0,
   :drafted? false,
-  :rank-name Lieutenant,
-  :desired-service :army,
+  :rank-name nil,
+  :desired-service :other,
   :gender :male,
-  :attributes {:ss 5, :ed 5, :in 11, :en 7, :dx 5, :st 4}}
- {:actual-service :army,
-  :age 34,
-  :name "Alan Annon",
+  :attributes {:ss 7, :ed 2, :in 10, :en 6, :dx 4, :st 7}}
+ {:reinlisting? false,
+  :actual-service :scouts,
+  :age 22,
+  :name "Leria Enry, LMT",
+  :commissioned? false,
+  :living? true,
+  :rank 0,
+  :drafted? false,
+  :rank-name nil,
+  :desired-service :scouts,
+  :gender :female,
+  :attributes {:ss 10, :ed 6, :in 11, :en 7, :dx 11, :st 2}}
+ {:reinlisting? false,
+  :actual-service :merchant,
+  :age 66,
+  :name "Elberto Pedro",
   :commissioned? true,
   :living? true,
   :rank 2,
   :drafted? false,
-  :rank-name Captain,
-  :desired-service :army,
+  :rank-name "ThirdOffc",
+  :desired-service :merchant,
   :gender :male,
-  :attributes {:ss 5, :ed 5, :in 11, :en 7, :dx 5, :st 4}}
- {:actual-service :army,
-  :age 38,
-  :name "Alan Annon",
+  :attributes {:ss 4, :ed 9, :in 7, :en 8, :dx 4, :st 3}}
+ {:reinlisting? false,
+  :actual-service :other,
+  :age 22,
+  :name "Justina Adriantaphyllos",
+  :commissioned? false,
+  :living? true,
+  :rank 0,
+  :drafted? false,
+  :rank-name nil,
+  :desired-service :other,
+  :gender :male,
+  :attributes {:ss 7, :ed 9, :in 6, :en 7, :dx 8, :st 11}}
+ {:reinlisting? false,
+  :actual-service :army,
+  :age 22,
+  :name "Herri",
   :commissioned? true,
   :living? true,
-  :rank 3,
+  :rank 1,
   :drafted? false,
-  :rank-name Major,
+  :rank-name "Lieutenant",
   :desired-service :army,
   :gender :male,
-  :attributes {:ss 5, :ed 5, :in 11, :en 7, :dx 5, :st 4}}
- {:actual-service :army,
-  :age 42,
-  :name "Alan Annon",
+  :attributes {:ss 4, :ed 7, :in 7, :en 5, :dx 9, :st 8}}
+ {:reinlisting? false,
+  :actual-service :army,
+  :age 22,
+  :name "Stuart Merto Raphael, MD",
   :commissioned? true,
   :living? true,
-  :rank 4,
-  :drafted? false,
-  :rank-name LtColonel,
-  :desired-service :army,
+  :rank 1,
+  :drafted? true,
+  :rank-name "Lieutenant",
+  :desired-service :marines,
   :gender :male,
-  :attributes {:ss 5, :ed 5, :in 11, :en 7, :dx 5, :st 4}}
- {:actual-service :army,
-  :age 46,
-  :name "Alan Annon",
+  :attributes {:ss 7, :ed 7, :in 3, :en 9, :dx 5, :st 8}}
+ {:reinlisting? false,
+  :actual-service :navy,
+  :age 22,
+  :name "Sanche Udio II",
   :commissioned? true,
   :living? true,
-  :rank 4,
+  :rank 1,
   :drafted? false,
-  :rank-name LtColonel,
-  :desired-service :army,
-  :gender :male,
-  :attributes {:ss 5, :ed 5, :in 11, :en 7, :dx 5, :st 4}}
- {:actual-service :army,
-  :age 50,
-  :name "Alan Annon",
+  :rank-name "Ensign",
+  :desired-service :navy,
+  :gender :female,
+  :attributes {:ss 9, :ed 7, :in 5, :en 11, :dx 7, :st 7}}
+ {:reinlisting? false,
+  :actual-service :merchant,
+  :age 30,
+  :name "Jochen Spike III",
   :commissioned? true,
   :living? true,
-  :rank 4,
+  :rank 1,
   :drafted? false,
-  :rank-name LtColonel,
-  :desired-service :army,
-  :gender :male,
-  :attributes {:ss 5, :ed 5, :in 11, :en 7, :dx 5, :st 4}}
- {:actual-service :army,
-  :age 54,
-  :name "Alan Annon",
+  :rank-name "FourthOffc",
+  :desired-service :merchant,
+  :gender :female,
+  :attributes {:ss 7, :ed 5, :in 7, :en 4, :dx 10, :st 6}}
+ {:reinlisting? false,
+  :actual-service :marines,
+  :age 26,
+  :name "Telisa Erat",
   :commissioned? true,
   :living? true,
-  :rank 4,
+  :rank 1,
   :drafted? false,
-  :rank-name LtColonel,
+  :rank-name "Lieutenant",
+  :desired-service :marines,
+  :gender :male,
+  :attributes {:ss 9, :ed 7, :in 10, :en 11, :dx 10, :st 8}}
+ {:reinlisting? true,
+  :actual-service :merchant,
+  :age 18,
+  :name "Rainer Vern Kathy, LCPT",
+  :commissioned? false,
+  :living? false,
+  :rank 0,
+  :drafted? false,
+  :rank-name nil,
+  :desired-service :merchant,
+  :gender :female,
+  :attributes {:ss 6, :ed 6, :in 4, :en 7, :dx 8, :st 3}}
+ {:reinlisting? true,
+  :actual-service :other,
+  :age 22,
+  :name "M. Olfe Natraj Minic, LMT",
+  :commissioned? false,
+  :living? false,
+  :rank 0,
+  :drafted? false,
+  :rank-name nil,
+  :desired-service :other,
+  :gender :female,
+  :attributes {:ss 7, :ed 5, :in 4, :en 5, :dx 12, :st 6}}
+ {:reinlisting? true,
+  :actual-service :scouts,
+  :age 22,
+  :name "Nandall Ritz Jr.",
+  :commissioned? false,
+  :living? false,
+  :rank 0,
+  :drafted? false,
+  :rank-name nil,
+  :desired-service :scouts,
+  :gender :male,
+  :attributes {:ss 10, :ed 9, :in 3, :en 9, :dx 9, :st 11}}
+ {:reinlisting? false,
+  :actual-service :navy,
+  :age 22,
+  :name "Rdre Pria, LMA",
+  :commissioned? false,
+  :living? true,
+  :rank 0,
+  :drafted? false,
+  :rank-name nil,
+  :desired-service :navy,
+  :gender :female,
+  :attributes {:ss 3, :ed 7, :in 11, :en 7, :dx 7, :st 7}}
+ {:reinlisting? false,
+  :actual-service :scouts,
+  :age 22,
+  :name "Sally Rley Ason",
+  :commissioned? false,
+  :living? true,
+  :rank 0,
+  :drafted? false,
+  :rank-name nil,
+  :desired-service :scouts,
+  :gender :male,
+  :attributes {:ss 6, :ed 11, :in 8, :en 9, :dx 8, :st 7}}
+ {:reinlisting? false,
+  :actual-service :army,
+  :age 26,
+  :name "Hirotoshi Eborah",
+  :commissioned? true,
+  :living? true,
+  :rank 2,
+  :drafted? false,
+  :rank-name "Captain",
   :desired-service :army,
   :gender :male,
-  :attributes {:ss 5, :ed 5, :in 11, :en 7, :dx 5, :st 4}}]
+  :attributes {:ss 8, :ed 4, :in 3, :en 7, :dx 8, :st 4}}
+ {:reinlisting? true,
+  :actual-service :merchant,
+  :age 18,
+  :name "Ratt Napper",
+  :commissioned? false,
+  :living? false,
+  :rank 0,
+  :drafted? false,
+  :rank-name nil,
+  :desired-service :merchant,
+  :gender :other,
+  :attributes {:ss 8, :ed 5, :in 6, :en 6, :dx 6, :st 2}}]
