@@ -230,14 +230,6 @@
 (defn as-syms [s] (vec (map symbol (clojure.string/split s #" "))))
 
 
-;; Example - character names + UPPs:
-(->> starting-character
-     repeatedly
-     (take 10)
-     (map vec)
-     vec)
-
-
 (defn roll-for-service-table-succeeds? [table char]
   (let [stats (:attributes char)
         {:keys [base-roll dms]} (->> char
@@ -317,246 +309,84 @@
                                (not (:living? m)))))
        last))
 
-(vec (repeatedly 20 make-character))
+
+;; Example - character names + UPPs:
+(->> starting-character
+     repeatedly
+     (take 10)
+     (map (juxt :name upp))
+     vec)
 
 ;;=>
-[{:reinlisting? false,
-  :actual-service :other,
-  :age 22,
-  :name "Dr. Ickey Erik Kinchao, LMA",
-  :commissioned? false,
-  :living? true,
-  :rank 0,
-  :drafted? false,
-  :rank-name nil,
-  :desired-service :other,
-  :gender :female,
-  :attributes {:ss 8, :ed 8, :in 6, :en 7, :dx 7, :st 8}}
- {:reinlisting? true,
-  :actual-service :scouts,
-  :age 18,
-  :name "Kemal Ones N-pierette I",
-  :commissioned? false,
-  :living? false,
-  :rank 0,
-  :drafted? false,
-  :rank-name nil,
-  :desired-service :scouts,
-  :gender :male,
-  :attributes {:ss 7, :ed 5, :in 7, :en 12, :dx 10, :st 7}}
- {:reinlisting? true,
-  :actual-service :army,
-  :age 18,
-  :name "Herr Lijah Ndries",
-  :commissioned? false,
-  :living? false,
-  :rank 0,
-  :drafted? false,
-  :rank-name nil,
-  :desired-service :army,
-  :gender :male,
-  :attributes {:ss 7, :ed 3, :in 11, :en 11, :dx 10, :st 12}}
- {:reinlisting? false,
-  :actual-service :marines,
-  :age 22,
-  :name "Yros Thew",
-  :commissioned? false,
-  :living? true,
-  :rank 0,
-  :drafted? false,
-  :rank-name nil,
-  :desired-service :marines,
-  :gender :female,
-  :attributes {:ss 7, :ed 3, :in 7, :en 8, :dx 9, :st 9}}
- {:reinlisting? false,
-  :actual-service :other,
-  :age 30,
-  :name "Laclypse",
-  :commissioned? false,
-  :living? true,
-  :rank 0,
-  :drafted? false,
-  :rank-name nil,
-  :desired-service :other,
-  :gender :male,
-  :attributes {:ss 7, :ed 2, :in 10, :en 6, :dx 4, :st 7}}
- {:reinlisting? false,
-  :actual-service :scouts,
-  :age 22,
-  :name "Leria Enry, LMT",
-  :commissioned? false,
-  :living? true,
-  :rank 0,
-  :drafted? false,
-  :rank-name nil,
-  :desired-service :scouts,
-  :gender :female,
-  :attributes {:ss 10, :ed 6, :in 11, :en 7, :dx 11, :st 2}}
- {:reinlisting? false,
-  :actual-service :merchant,
-  :age 66,
-  :name "Elberto Pedro",
-  :commissioned? true,
-  :living? true,
-  :rank 2,
-  :drafted? false,
-  :rank-name "ThirdOffc",
-  :desired-service :merchant,
-  :gender :male,
-  :attributes {:ss 4, :ed 9, :in 7, :en 8, :dx 4, :st 3}}
- {:reinlisting? false,
-  :actual-service :other,
-  :age 22,
-  :name "Justina Adriantaphyllos",
-  :commissioned? false,
-  :living? true,
-  :rank 0,
-  :drafted? false,
-  :rank-name nil,
-  :desired-service :other,
-  :gender :male,
-  :attributes {:ss 7, :ed 9, :in 6, :en 7, :dx 8, :st 11}}
- {:reinlisting? false,
-  :actual-service :army,
-  :age 22,
-  :name "Herri",
-  :commissioned? true,
-  :living? true,
-  :rank 1,
-  :drafted? false,
-  :rank-name "Lieutenant",
-  :desired-service :army,
-  :gender :male,
-  :attributes {:ss 4, :ed 7, :in 7, :en 5, :dx 9, :st 8}}
- {:reinlisting? false,
-  :actual-service :army,
-  :age 22,
-  :name "Stuart Merto Raphael, MD",
-  :commissioned? true,
-  :living? true,
-  :rank 1,
-  :drafted? true,
-  :rank-name "Lieutenant",
-  :desired-service :marines,
-  :gender :male,
-  :attributes {:ss 7, :ed 7, :in 3, :en 9, :dx 5, :st 8}}
- {:reinlisting? false,
-  :actual-service :navy,
-  :age 22,
-  :name "Sanche Udio II",
-  :commissioned? true,
-  :living? true,
-  :rank 1,
-  :drafted? false,
-  :rank-name "Ensign",
-  :desired-service :navy,
-  :gender :female,
-  :attributes {:ss 9, :ed 7, :in 5, :en 11, :dx 7, :st 7}}
- {:reinlisting? false,
-  :actual-service :merchant,
-  :age 30,
-  :name "Jochen Spike III",
-  :commissioned? true,
-  :living? true,
-  :rank 1,
-  :drafted? false,
-  :rank-name "FourthOffc",
-  :desired-service :merchant,
-  :gender :female,
-  :attributes {:ss 7, :ed 5, :in 7, :en 4, :dx 10, :st 6}}
- {:reinlisting? false,
-  :actual-service :marines,
-  :age 26,
-  :name "Telisa Erat",
-  :commissioned? true,
-  :living? true,
-  :rank 1,
-  :drafted? false,
-  :rank-name "Lieutenant",
-  :desired-service :marines,
-  :gender :male,
-  :attributes {:ss 9, :ed 7, :in 10, :en 11, :dx 10, :st 8}}
- {:reinlisting? true,
-  :actual-service :merchant,
-  :age 18,
-  :name "Rainer Vern Kathy, LCPT",
-  :commissioned? false,
-  :living? false,
-  :rank 0,
-  :drafted? false,
-  :rank-name nil,
-  :desired-service :merchant,
-  :gender :female,
-  :attributes {:ss 6, :ed 6, :in 4, :en 7, :dx 8, :st 3}}
- {:reinlisting? true,
-  :actual-service :other,
-  :age 22,
-  :name "M. Olfe Natraj Minic, LMT",
-  :commissioned? false,
-  :living? false,
-  :rank 0,
-  :drafted? false,
-  :rank-name nil,
-  :desired-service :other,
-  :gender :female,
-  :attributes {:ss 7, :ed 5, :in 4, :en 5, :dx 12, :st 6}}
- {:reinlisting? true,
-  :actual-service :scouts,
-  :age 22,
-  :name "Nandall Ritz Jr.",
-  :commissioned? false,
-  :living? false,
-  :rank 0,
-  :drafted? false,
-  :rank-name nil,
-  :desired-service :scouts,
-  :gender :male,
-  :attributes {:ss 10, :ed 9, :in 3, :en 9, :dx 9, :st 11}}
- {:reinlisting? false,
-  :actual-service :navy,
-  :age 22,
-  :name "Rdre Pria, LMA",
-  :commissioned? false,
-  :living? true,
-  :rank 0,
-  :drafted? false,
-  :rank-name nil,
-  :desired-service :navy,
-  :gender :female,
-  :attributes {:ss 3, :ed 7, :in 11, :en 7, :dx 7, :st 7}}
- {:reinlisting? false,
-  :actual-service :scouts,
-  :age 22,
-  :name "Sally Rley Ason",
-  :commissioned? false,
-  :living? true,
-  :rank 0,
-  :drafted? false,
-  :rank-name nil,
-  :desired-service :scouts,
-  :gender :male,
-  :attributes {:ss 6, :ed 11, :in 8, :en 9, :dx 8, :st 7}}
- {:reinlisting? false,
-  :actual-service :army,
-  :age 26,
-  :name "Hirotoshi Eborah",
-  :commissioned? true,
-  :living? true,
-  :rank 2,
-  :drafted? false,
-  :rank-name "Captain",
-  :desired-service :army,
-  :gender :male,
-  :attributes {:ss 8, :ed 4, :in 3, :en 7, :dx 8, :st 4}}
- {:reinlisting? true,
-  :actual-service :merchant,
-  :age 18,
-  :name "Ratt Napper",
-  :commissioned? false,
-  :living? false,
-  :rank 0,
-  :drafted? false,
-  :rank-name nil,
-  :desired-service :merchant,
-  :gender :other,
-  :attributes {:ss 8, :ed 5, :in 6, :en 6, :dx 6, :st 2}}]
+[["Tmann Kyle" "56AB45"]
+ ["Dori Kate" "A78957"]
+ ["Eehan Wade V" "B59854"]
+ ["Sper Erri" "CAB664"]
+ ["Sir Ugih Page" "479AA6"]
+ ["Amsey Ndreas, LMA" "4956B7"]
+ ["Floyd Einer V" "239837"]
+ ["Opher Nklin" "6C488A"]
+ ["Avis Wood" "893945"]
+ ["Orbertrandi Thur Jr." "474459"]]
+
+
+;; Example - full characters with name, rank, age and UPP:
+
+(defn char-str [char]
+  (let [rn (:rank-name char)
+        died (not (:living? char))
+        svc (:actual-service char)]
+    (format "%s%s, %sAge %d %s%s"
+            (if rn (str rn " ") "")
+            (:name char)
+            (if (= svc :other) "" (str (name svc) ", "))
+            (:age char)
+            (upp char)
+            (if died " DIED" ""))))
+
+
+(->> make-character
+     (repeatedly 50)
+     (remove (complement :living?))  ;; Bring out yer dead!!!
+     (sort-by :name)
+     (map char-str))
+
+;;=>
+("Anath Rice, Age 22 8465A8"
+ "Ensign Anos Hector, navy, Age 22 64CA68"
+ "Artyn, Age 22 A26758"
+ "Captain Awan Chao, army, Age 30 887874"
+ "FourthOffc Chael Hammad III, merchant, Age 22 BB98BA"
+ "Curt Huashi, MD, Age 38 BAAB77"
+ "Captain Cynthias Denis, LMT, army, Age 26 632CA7"
+ "Elsa Lorrainer, scouts, Age 22 8894B7"
+ "Lieutenant Eora Oyle, army, Age 22 64A3B6"
+ "Lieutenant Exandeep Serdar Uerite, army, Age 22 857A76"
+ "Lieutenant Harenda Oachim, army, Age 22 B68745"
+ "Homas Iana, navy, Age 34 836B75"
+ "General Ichiel Amie, army, Age 50 287945"
+ "FourthOffc Ingbai Ancy, merchant, Age 22 A78677"
+ "Kinchao Cher, army, Age 22 783464"
+ "Kurt Suresh III, Age 26 379B7A"
+ "FourthOffc Lowell Miya, merchant, Age 22 C86A83"
+ "M. Lynneth Hierry, Age 22 366625"
+ "Lieutenant Mone Osur, army, Age 22 65AA73"
+ "LtColonel Mrs. Stevan Nette, army, Age 34 4B8974"
+ "Mrs. Thleen Rion, Age 22 A8A486"
+ "Ms. Aanandal Ffrey Anley, Esq., marines, Age 22 B885A4"
+ "FourthOffc Nhard Douglas, merchant, Age 22 7466B9"
+ "FourthOffc Nrad Dhar, merchant, Age 26 7B87B4"
+ "Ensign Obbin Udsen, navy, Age 42 797A89"
+ "Onella Alain, Age 22 9739B9"
+ "Pablo Effery, marines, Age 26 A875B9"
+ "Rahul Icole Shyam, Ph.D., Age 22 694444"
+ "Romain Urph, scouts, Age 26 969858"
+ "Sir Dawn Tewart, Age 30 28328B"
+ "Sir Rgiu Atap V, Age 26 96B557"
+ "Lieutenant Skip Regg, army, Age 22 667B38"
+ "Lieutenant Sr. Ward Ilner, LCPT, army, Age 22 895A68"
+ "Tarmi Egory Ephen, navy, Age 26 636379"
+ "Major Thias Jouke, army, Age 34 75B885"
+ "Captain Vadim Aleb II, army, Age 26 B957A5"
+ "Ylan Roland, navy, Age 22 935C67")
+
