@@ -26,7 +26,7 @@
                                 (partition 4 dms))}])
 
 
-(defmacro deftable [tname & service-rows]
+(defmacro def-service-table [tname & service-rows]
   `(do (def ~tname
          (->> (quote ~(partition 3 service-rows))
               (mapcat row-vec)
@@ -38,7 +38,7 @@
 (defcoll services navy marines army scouts merchant other)
 
 
-(deftable enlistment
+(def-service-table enlistment
   navy     8 [IN 8 -> +1, ED 9 -> +2]
   marines  9 [IN 8 -> +1, ST 8 -> +2]
   army     5 [DX 6 -> +1, EN 5 -> +2]
@@ -47,7 +47,7 @@
   other    3 [])
 
 
-(deftable survival
+(def-service-table survival
   navy     5 [IN 7 -> +2]
   marines  6 [EN 8 -> +2]
   army     5 [ED 6 -> +2]
@@ -56,7 +56,7 @@
   other    5 [IN 9 -> +2])
 
 
-(deftable commission
+(def-service-table commission
   navy     10 [SS 9 -> +1]
   marines  9  [ED 7 -> +1]
   army     5  [EN 7 -> +1]
@@ -65,13 +65,35 @@
   other    -  [])
 
 
-(deftable promotion
+(def-service-table promotion
   navy     8  [ED 8 -> +1]
   marines  9  [SS 8 -> +1]
   army     6  [ED 7 -> +1]
   scouts   -  []
   merchant 10 [IN 9 -> +1]
   other    -  [])
+
+
+(defn selection-row-vec [[svc & elts]]
+  [(keyword svc) (map #(if (= % '-) nil %) elts)])
+
+
+(defmacro def-selection-table [tname & rows]
+  `(do (def ~tname
+         (->> (quote ~rows)
+              (partition 7)
+              (mapcat selection-row-vec)
+              (apply hash-map)))
+       ~tname))
+
+
+(def-selection-table ranks
+  navy     Ensign     Lieutenant LtCmdr    Commander Captain Admiral
+  marines  Lieutenant Captain    ForceCmdr LtColonel Colonel Brigadier
+  army     Lieutenant Captain    Major     LtColonel Colonel General
+  scouts   -          -          -         -         -       -
+  merchant FourthOffc ThirdOffc  SecndOffc FirstOffc Captain -
+  other    -          -          -         -         -       -)
 
 
 (defn char-attr-map []
@@ -129,6 +151,7 @@
      :living? true
      :commissioned? false
      :rank 0
+     :rank-name nil
      :name nom}))
 
 
@@ -201,50 +224,40 @@
 (->> make-character
      repeatedly
      (take 10)
-     (map (juxt (comp as-syms :name) (comp as-syms upp)))
-     (map (partial apply concat))
      (map vec)
      vec)
 
-;;=>
-[[Unnard Ergio, MD 5374B4]
- [Llan Ivek C66C52]
- [Orton Thleen Judith 5755AA]
- [Hmet Mberly Dale A94696]
- [Ophe Jingbai Lentinos II 767967]
- [Sr. Nrichael Ustin 538489]
- [Sir Onal Eeks Udio 88999B]
- [Idney Rvillermo Assos Ierett Moore A84489]
- [Juri Vincenzo 983758]
- [Mme. Adley Nifer Sr. 849568]]
 
+(defn roll-for-service-table-succeeds? [table char]
+  (let [stats (:attributes char)
+        {:keys [base-roll dms]} (->> char
+                                     :actual-service
+                                     (#(table %)))]
+    (roll-with-dms-succeeds? base-roll dms stats)))
 
 
 ;; Terms of service
-(defn maybe-commission [char]
-  (cond
-   (not (:living? char)) char
-   (:commissioned? char) char
-   :else (let [stats (:attributes char)
-          {:keys [base-roll dms]} (->> char
-                                       :actual-service
-                                       (#(commission %)))]
-           (if (roll-with-dms-succeeds? base-roll dms stats)
-             (assoc char :commissioned? true)
-             char))))
+(defn maybe-increase-rank [char]
+  (let [rank-vals (vec (ranks (:actual-service char)))
+        rank-name (get rank-vals (:rank char))]
+    (if rank-name
+      (-> char
+          (update-in [:rank] inc)
+          (assoc :rank-name rank-name))
+      char)))
 
 
 (defn maybe-promote [char]
   (cond
    (not (:living? char)) char
-   (not (:commissioned? char)) char
-   :else (let [stats (:attributes char)
-          {:keys [base-roll dms]} (->> char
-                                       :actual-service
-                                       (#(promotion %)))]
-           (if-not (roll-with-dms-succeeds? base-roll dms stats)
-             char
-             (update-in char [:rank] inc)))))
+   (:commissioned? char) (if (roll-for-service-table-succeeds? promotion char)
+                           (maybe-increase-rank char)
+                           char)
+   :else (if (roll-for-service-table-succeeds? commission char)
+           (-> char
+               (assoc :commissioned? true)
+               maybe-increase-rank)
+           char)))
 
 
 (defn age [char]
@@ -256,133 +269,131 @@
 (defn maybe-kill [char]
   (if-not (:living? char)
     char
-    (let [stats (:attributes char)
-          {:keys [base-roll dms]} (->> char
-                                       :actual-service
-                                       (#(survival %)))]
-      (if (roll-with-dms-succeeds? base-roll dms stats)
-        char
-        (assoc char :living? false)))))
+    (if (roll-for-service-table-succeeds? survival char)
+      char
+      (assoc char :living? false))))
 
 
 (defn apply-term-of-service [char]
   (-> char
       maybe-kill
-      maybe-commission
       maybe-promote
       age))
 
 
-(repeatedly 10 #(->> (make-character)
-                     (iterate apply-term-of-service)
-                     (take 10)
-                     (map (juxt :name :living? :age :rank))
-                     vec))
+(->> (make-character)
+     (iterate apply-term-of-service)
+     (take 10)
+     vec)
 
 ;;=>
-([["Tigger, LCPT" true 18 0]
-  ["Tigger, LCPT" true 22 0]
-  ["Tigger, LCPT" true 26 0]
-  ["Tigger, LCPT" true 30 0]
-  ["Tigger, LCPT" true 34 0]
-  ["Tigger, LCPT" true 38 0]
-  ["Tigger, LCPT" false 38 0]
-  ["Tigger, LCPT" false 38 0]
-  ["Tigger, LCPT" false 38 0]
-  ["Tigger, LCPT" false 38 0]]
- [["Azel Rnard Alan" true 18 0]
-  ["Azel Rnard Alan" true 22 0]
-  ["Azel Rnard Alan" true 26 0]
-  ["Azel Rnard Alan" true 30 0]
-  ["Azel Rnard Alan" true 34 0]
-  ["Azel Rnard Alan" true 38 1]
-  ["Azel Rnard Alan" true 42 1]
-  ["Azel Rnard Alan" true 46 2]
-  ["Azel Rnard Alan" true 50 2]
-  ["Azel Rnard Alan" true 54 2]]
- [["Mrs. Ernie Wahar I" true 18 0]
-  ["Mrs. Ernie Wahar I" true 22 0]
-  ["Mrs. Ernie Wahar I" true 26 0]
-  ["Mrs. Ernie Wahar I" false 26 0]
-  ["Mrs. Ernie Wahar I" false 26 0]
-  ["Mrs. Ernie Wahar I" false 26 0]
-  ["Mrs. Ernie Wahar I" false 26 0]
-  ["Mrs. Ernie Wahar I" false 26 0]
-  ["Mrs. Ernie Wahar I" false 26 0]
-  ["Mrs. Ernie Wahar I" false 26 0]]
- [["Dr. Hari Nolis, LCPT" true 18 0]
-  ["Dr. Hari Nolis, LCPT" true 22 1]
-  ["Dr. Hari Nolis, LCPT" true 26 1]
-  ["Dr. Hari Nolis, LCPT" true 30 2]
-  ["Dr. Hari Nolis, LCPT" true 34 2]
-  ["Dr. Hari Nolis, LCPT" true 38 3]
-  ["Dr. Hari Nolis, LCPT" true 42 4]
-  ["Dr. Hari Nolis, LCPT" true 46 5]
-  ["Dr. Hari Nolis, LCPT" true 50 6]
-  ["Dr. Hari Nolis, LCPT" true 54 7]]
- [["Oshi Ques Fumi Olas Ussell" true 18 0]
-  ["Oshi Ques Fumi Olas Ussell" true 22 1]
-  ["Oshi Ques Fumi Olas Ussell" true 26 1]
-  ["Oshi Ques Fumi Olas Ussell" true 30 1]
-  ["Oshi Ques Fumi Olas Ussell" true 34 2]
-  ["Oshi Ques Fumi Olas Ussell" true 38 3]
-  ["Oshi Ques Fumi Olas Ussell" true 42 3]
-  ["Oshi Ques Fumi Olas Ussell" true 46 4]
-  ["Oshi Ques Fumi Olas Ussell" true 50 5]
-  ["Oshi Ques Fumi Olas Ussell" true 54 6]]
- [["Ms. Rkeer, LMT" true 18 0]
-  ["Ms. Rkeer, LMT" true 22 0]
-  ["Ms. Rkeer, LMT" true 26 0]
-  ["Ms. Rkeer, LMT" true 30 0]
-  ["Ms. Rkeer, LMT" false 30 0]
-  ["Ms. Rkeer, LMT" false 30 0]
-  ["Ms. Rkeer, LMT" false 30 0]
-  ["Ms. Rkeer, LMT" false 30 0]
-  ["Ms. Rkeer, LMT" false 30 0]
-  ["Ms. Rkeer, LMT" false 30 0]]
- [["Suwandip Avendra" true 18 0]
-  ["Suwandip Avendra" false 18 0]
-  ["Suwandip Avendra" false 18 0]
-  ["Suwandip Avendra" false 18 0]
-  ["Suwandip Avendra" false 18 0]
-  ["Suwandip Avendra" false 18 0]
-  ["Suwandip Avendra" false 18 0]
-  ["Suwandip Avendra" false 18 0]
-  ["Suwandip Avendra" false 18 0]
-  ["Suwandip Avendra" false 18 0]]
- [["Ramsey IV" true 18 0]
-  ["Ramsey IV" true 22 0]
-  ["Ramsey IV" true 26 1]
-  ["Ramsey IV" true 30 1]
-  ["Ramsey IV" true 34 2]
-  ["Ramsey IV" true 38 2]
-  ["Ramsey IV" true 42 3]
-  ["Ramsey IV" true 46 3]
-  ["Ramsey IV" true 50 3]
-  ["Ramsey IV" true 54 4]]
- [["Sir Mone Nest II" true 18 0]
-  ["Sir Mone Nest II" true 22 0]
-  ["Sir Mone Nest II" true 26 0]
-  ["Sir Mone Nest II" true 30 1]
-  ["Sir Mone Nest II" true 34 2]
-  ["Sir Mone Nest II" true 38 3]
-  ["Sir Mone Nest II" true 42 3]
-  ["Sir Mone Nest II" false 42 3]
-  ["Sir Mone Nest II" false 42 3]
-  ["Sir Mone Nest II" false 42 3]]
- [["Eliott Danielle Hyllos, MD" true 18 0]
-  ["Eliott Danielle Hyllos, MD" false 18 0]
-  ["Eliott Danielle Hyllos, MD" false 18 0]
-  ["Eliott Danielle Hyllos, MD" false 18 0]
-  ["Eliott Danielle Hyllos, MD" false 18 0]
-  ["Eliott Danielle Hyllos, MD" false 18 0]
-  ["Eliott Danielle Hyllos, MD" false 18 0]
-  ["Eliott Danielle Hyllos, MD" false 18 0]
-  ["Eliott Danielle Hyllos, MD" false 18 0]
-  ["Eliott Danielle Hyllos, MD" false 18 0]])
-
-
-
-
-
-
+[{:actual-service :army,
+  :age 18,
+  :name "Alan Annon",
+  :commissioned? false,
+  :living? true,
+  :rank 0,
+  :drafted? false,
+  :rank-name nil,
+  :desired-service :army,
+  :gender :male,
+  :attributes {:ss 5, :ed 5, :in 11, :en 7, :dx 5, :st 4}}
+ {:actual-service :army,
+  :age 22,
+  :name "Alan Annon",
+  :commissioned? true,
+  :living? true,
+  :rank 1,
+  :drafted? false,
+  :rank-name Lieutenant,
+  :desired-service :army,
+  :gender :male,
+  :attributes {:ss 5, :ed 5, :in 11, :en 7, :dx 5, :st 4}}
+ {:actual-service :army,
+  :age 26,
+  :name "Alan Annon",
+  :commissioned? true,
+  :living? true,
+  :rank 1,
+  :drafted? false,
+  :rank-name Lieutenant,
+  :desired-service :army,
+  :gender :male,
+  :attributes {:ss 5, :ed 5, :in 11, :en 7, :dx 5, :st 4}}
+ {:actual-service :army,
+  :age 30,
+  :name "Alan Annon",
+  :commissioned? true,
+  :living? true,
+  :rank 1,
+  :drafted? false,
+  :rank-name Lieutenant,
+  :desired-service :army,
+  :gender :male,
+  :attributes {:ss 5, :ed 5, :in 11, :en 7, :dx 5, :st 4}}
+ {:actual-service :army,
+  :age 34,
+  :name "Alan Annon",
+  :commissioned? true,
+  :living? true,
+  :rank 2,
+  :drafted? false,
+  :rank-name Captain,
+  :desired-service :army,
+  :gender :male,
+  :attributes {:ss 5, :ed 5, :in 11, :en 7, :dx 5, :st 4}}
+ {:actual-service :army,
+  :age 38,
+  :name "Alan Annon",
+  :commissioned? true,
+  :living? true,
+  :rank 3,
+  :drafted? false,
+  :rank-name Major,
+  :desired-service :army,
+  :gender :male,
+  :attributes {:ss 5, :ed 5, :in 11, :en 7, :dx 5, :st 4}}
+ {:actual-service :army,
+  :age 42,
+  :name "Alan Annon",
+  :commissioned? true,
+  :living? true,
+  :rank 4,
+  :drafted? false,
+  :rank-name LtColonel,
+  :desired-service :army,
+  :gender :male,
+  :attributes {:ss 5, :ed 5, :in 11, :en 7, :dx 5, :st 4}}
+ {:actual-service :army,
+  :age 46,
+  :name "Alan Annon",
+  :commissioned? true,
+  :living? true,
+  :rank 4,
+  :drafted? false,
+  :rank-name LtColonel,
+  :desired-service :army,
+  :gender :male,
+  :attributes {:ss 5, :ed 5, :in 11, :en 7, :dx 5, :st 4}}
+ {:actual-service :army,
+  :age 50,
+  :name "Alan Annon",
+  :commissioned? true,
+  :living? true,
+  :rank 4,
+  :drafted? false,
+  :rank-name LtColonel,
+  :desired-service :army,
+  :gender :male,
+  :attributes {:ss 5, :ed 5, :in 11, :en 7, :dx 5, :st 4}}
+ {:actual-service :army,
+  :age 54,
+  :name "Alan Annon",
+  :commissioned? true,
+  :living? true,
+  :rank 4,
+  :drafted? false,
+  :rank-name LtColonel,
+  :desired-service :army,
+  :gender :male,
+  :attributes {:ss 5, :ed 5, :in 11, :en 7, :dx 5, :st 4}}]
