@@ -49,7 +49,7 @@ Obligatory example:
 ;; Example - full characters with name, rank, age and UPP:
 (->> make-character
      (repeatedly 50)
-     (remove (complement :living?))  ;; Bring out yer dead!!!
+     (remove (complement :living?))  ;; Remove those killed while serving
      (sort-by :name)
      (map format-name-map)
      vec)
