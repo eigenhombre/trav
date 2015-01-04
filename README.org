@@ -3,7 +3,7 @@
 
 Clojure functions for generating random characters (and eventually
 more) for [[http://en.wikipedia.org/wiki/Traveller_%28role-playing_game%29#Traveller_.281977.2C_GDW.29][Classic Traveller]], a popular '80s-era role playing game
-still being used today.
+(RPG) still being used today.
 
 * Why?
 
@@ -121,8 +121,8 @@ trademarks. In addition, any program/articles/file on this site cannot
 be republished or distributed without the consent of the author who
 contributed it.
 
-The code in this repository is Copyright (C) 2012-2015 John Jacobsen.
-Distributed under the Eclipse Public License, the same as Clojure.
+The code in this repository is Copyright (C) 2012-2015 John Jacobsen,
+and distributed under the Eclipse Public License, the same as Clojure.
 
 THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
 EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
