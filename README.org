@@ -1,4 +1,72 @@
-#+TITLE: trav
+#+TITLE: trav - Traveller Character Generation in Clojure
+#+OPTIONS: toc:nil num:nil
 
-Generating of random characters (& eventually more) for a popular '80s
-era role playing game.
+Clojure functions for generating random characters (and eventually
+more) for [[http://en.wikipedia.org/wiki/Traveller_%28role-playing_game%29#Traveller_.281977.2C_GDW.29][Classic Traveller]], a popular '80s-era role playing game
+still being used today.
+
+* Why?
+
+- To experiment with using [[https://github.com/eigenhombre/trav/blob/master/src/trav/char.clj#L41][small DSLs]] to represent RPG rules and tables
+- To indulge an ancient fascination with
+  - simulation
+  - science fiction
+  - role playing games
+- To see what kind of complex behaviors emerge out of the fairly
+  detailed rules provided by the game designer
+- To tune and refine my [[https://github.com/eigenhombre/namejen][Markov-chain-based Character Name Generator]]
+- Because it's fun!
+
+* Status
+
+** Done
+- Characters
+  - Name selection
+  - Service determination
+  - Commissioning, promotion, reinlistment, survival, aging
+  - Standard formatting, incl. UPPs
+
+** Ambitions
+- Characters
+  - Aging damage
+  - Skill selection
+  - Benefits
+  - Equipment/possessions
+- Worlds ("Scouts"-based system generation)
+- Encounters
+- Starships
+- Interplanetary and interstellar travel
+- Character and ship combat
+- ...
+
+* Usage
+
+For now, see the [[https://github.com/eigenhombre/trav/blob/master/src/trav/char.clj][functions and examples]] in the `char` namespace.
+
+#+ATTR_HTML: image :align left :clear both :width 200 :padding-right 30
+[[./images/trav.png]]
+
+The Traveller game in all forms is owned by Far Future
+Enterprises. Copyright 1977 - 2008 Far Future Enterprises. Traveller
+is a registered trademark of Far Future Enterprises. Far Future
+permits web sites and fanzines for this game, provided it contains
+this notice, that Far Future is notified, and subject to a withdrawal
+of permission on 90 days notice. The contents of this site are for
+personal, non-commercial use only. Any use of Far Future Enterprises's
+copyrighted material or trademarks anywhere on this web site and its
+files should not be viewed as a challenge to those copyrights or
+trademarks. In addition, any program/articles/file on this site cannot
+be republished or distributed without the consent of the author who
+contributed it.
+
+The code in this repository is Copyright (C) 2012-2015 John Jacobsen.
+Distributed under the Eclipse Public License, the same as Clojure.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
