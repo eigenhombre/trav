@@ -15,6 +15,7 @@ still being used today.
 - To see what kind of complex behaviors emerge out of the fairly
   detailed rules provided by the game designer
 - To tune and refine my [[https://github.com/eigenhombre/namejen][Markov-chain-based Character Name Generator]]
+- As a launching point for other game experiments
 - Because it's fun!
 
 * Status
