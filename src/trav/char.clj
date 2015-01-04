@@ -1,7 +1,7 @@
 (ns trav.char
   (:require [trav.dice :refer [d]]
             [trav.util :refer [hexcode take-until]]
-            [namejen.names :refer [funny-name-maker]]))
+            [namejen.names :refer [gen-name-data-as-map]]))
 
 
 (defn keywordize [s]
@@ -110,15 +110,6 @@
                            (repeatedly d))))
 
 
-(defn name-maker [] (first (funny-name-maker)))
-
-
-(defn determine-gender []
-  (rand-nth (concat (repeat 10 :male)
-                    (repeat 10 :female)
-                    [:other])))
-
-
 (defn roll-with-dms-succeeds? [base-roll dms stats]
   (let [applicable-dms (apply +
                               (for [{:keys [attr thresh dm]} dms
@@ -140,29 +131,26 @@
     [desired-service (not success?) actual-service]))
 
 
-;; FIXME: Add Ranks to names
 (defn starting-character []
   (let [stats (char-attr-map)
-        nom (name-maker)
         soc (get stats :ss)
         knighted? (= soc 11)
         baron? (= soc 12)
-        nom (cond knighted? (str "Sir " nom)
-                  baron? (str "Von " nom)
-                  :else nom)
+        royal-form (cond knighted? "Sir"
+                         baron? "Von")
         [desired-service drafted? actual-service] (determine-service stats)]
-    {:age 18
-     :gender (determine-gender)
-     :attributes stats
-     :desired-service desired-service
-     :actual-service actual-service
-     :drafted? drafted?
-     :living? true
-     :commissioned? false
-     :reinlisting? true
-     :rank 0
-     :rank-name nil
-     :name nom}))
+    (merge (gen-name-data-as-map)
+           {:age 18
+            :royal-form royal-form
+            :attributes stats
+            :desired-service desired-service
+            :actual-service actual-service
+            :drafted? drafted?
+            :living? true
+            :commissioned? false
+            :reinlisting? true
+            :rank 0
+            :rank-name nil})))
 
 
 (->> starting-character
@@ -171,46 +159,70 @@
      vec)
 
 ;;=>
-[{:actual-service :scouts,
-  :age 18,
-  :name "Suwandip Egory",
-  :commissioned? false,
-  :living? true,
-  :rank 0,
-  :drafted? false,
-  :desired-service :scouts,
-  :gender :female,
-  :attributes {:ss 7, :ed 8, :in 7, :en 10, :dx 3, :st 5}}
- {:actual-service :marines,
-  :age 18,
-  :name "Lainer Think",
-  :commissioned? false,
-  :living? true,
-  :rank 0,
-  :drafted? false,
-  :desired-service :marines,
-  :gender :male,
-  :attributes {:ss 7, :ed 6, :in 6, :en 5, :dx 4, :st 7}}
- {:actual-service :scouts,
-  :age 18,
-  :name "Dale Riam Erren",
-  :commissioned? false,
-  :living? true,
-  :rank 0,
-  :drafted? false,
-  :desired-service :scouts,
-  :gender :other,
-  :attributes {:ss 6, :ed 11, :in 9, :en 5, :dx 4, :st 4}}
- {:actual-service :army,
-  :age 18,
-  :name "Atsan Itcher Danny Rcia Lenny",
-  :commissioned? false,
-  :living? true,
-  :rank 0,
-  :drafted? false,
-  :desired-service :army,
-  :gender :male,
-  :attributes {:ss 5, :ed 12, :in 5, :en 4, :dx 4, :st 11}}]
+'[{:royal-form nil,
+   :reinlisting? true,
+   :actual-service :scouts,
+   :generation nil,
+   :age 18,
+   :commissioned? false,
+   :living? true,
+   :rank 0,
+   :first-name "Nthony",
+   :surnames ("Rnest"),
+   :prefix nil,
+   :drafted? false,
+   :rank-name nil,
+   :desired-service :scouts,
+   :gender :male,
+   :attributes {:ss 6, :ed 8, :in 8, :en 10, :dx 5, :st 3}}
+  {:royal-form nil,
+   :reinlisting? true,
+   :actual-service :other,
+   :generation nil,
+   :age 18,
+   :commissioned? false,
+   :living? true,
+   :rank 0,
+   :first-name "Atoshiko",
+   :surnames ("Anislaw" "Ndro"),
+   :prefix nil,
+   :drafted? false,
+   :rank-name nil,
+   :desired-service :other,
+   :gender :female,
+   :attributes {:ss 4, :ed 11, :in 8, :en 9, :dx 11, :st 4}}
+  {:royal-form nil,
+   :reinlisting? true,
+   :actual-service :other,
+   :generation nil,
+   :age 18,
+   :commissioned? false,
+   :living? true,
+   :rank 0,
+   :first-name "Lendolynn",
+   :surnames (),
+   :prefix nil,
+   :drafted? false,
+   :rank-name nil,
+   :desired-service :other,
+   :gender :female,
+   :attributes {:ss 8, :ed 6, :in 7, :en 7, :dx 4, :st 12}}
+  {:royal-form "Von",
+   :reinlisting? true,
+   :actual-service :other,
+   :generation nil,
+   :age 18,
+   :commissioned? false,
+   :living? true,
+   :rank 0,
+   :first-name "Tancenza",
+   :surnames ("Anavendran" "Nadeem"),
+   :prefix nil,
+   :drafted? true,
+   :rank-name nil,
+   :desired-service :merchant,
+   :gender :female,
+   :attributes {:ss 12, :ed 8, :in 5, :en 2, :dx 6, :st 7}}]
 
 
 (defprotocol UPP
@@ -310,83 +322,94 @@
        last))
 
 
+;; Adapted from eigenhombre/namejen:
+(defn format-name-map [{:keys [gender
+                               prefix
+                               first-name
+                               surnames
+                               generation
+                               actual-service
+                               rank-name
+                               royal-form
+                               attributes] :as char}]
+  (let [prefix (if rank-name rank-name prefix)]
+    (apply str `(~@(if (and prefix
+                            (seq surnames)) [prefix " "])
+                 ~@ (if (and royal-form
+                             (seq surnames)) [royal-form " "])
+                    ~first-name
+                    ~(if (seq surnames) " " "")
+                    ~@(interpose " " surnames)
+                    ~@(if (and (seq surnames)
+                               generation) [", " generation])
+                    ~({:other ", " :male " (M), " :female " (F), "} gender)
+                    ~(if (= actual-service :other)
+                       ""
+                       (str (name actual-service) ", "))
+                    ~(upp char)))))
+
+
 ;; Example - character names + UPPs:
 (->> starting-character
      repeatedly
      (take 10)
-     (map (juxt :name upp))
+     (map format-name-map)
      vec)
 
 ;;=>
-[["Tmann Kyle" "56AB45"]
- ["Dori Kate" "A78957"]
- ["Eehan Wade V" "B59854"]
- ["Sper Erri" "CAB664"]
- ["Sir Ugih Page" "479AA6"]
- ["Amsey Ndreas, LMA" "4956B7"]
- ["Floyd Einer V" "239837"]
- ["Opher Nklin" "6C488A"]
- ["Avis Wood" "893945"]
- ["Orbertrandi Thur Jr." "474459"]]
+["Ms. Lady Debi (F), merchant, 895849"
+ "Emona Anan (F), marines, 87CB8A"
+ "Mr. Nicholas Erman, III (M), 3B8393"
+ "Ayson Joon (M), 878436"
+ "Ms. Sir Ieko Bson (F), marines, 727A6B"
+ "Kasandelany Orraine Ised Orne Hakil (F), merchant, 6289A7"
+ "Ms. Osphina Hatter Loukas (F), army, 788849"
+ "Sir Librada Will Luke Presley (F), navy, 75746B"
+ "Ms. Noma Lexis (F), scouts, 45BA7A"
+ "Oward Murat (M), army, B86744"]
 
 
 ;; Example - full characters with name, rank, age and UPP:
-
-(defn char-str [char]
-  (let [rn (:rank-name char)
-        died (not (:living? char))
-        svc (:actual-service char)]
-    (format "%s%s, %sAge %d %s%s"
-            (if rn (str rn " ") "")
-            (:name char)
-            (if (= svc :other) "" (str (name svc) ", "))
-            (:age char)
-            (upp char)
-            (if died " DIED" ""))))
-
-
 (->> make-character
      (repeatedly 50)
      (remove (complement :living?))  ;; Bring out yer dead!!!
      (sort-by :name)
-     (map char-str))
+     (map format-name-map)
+     vec)
 
 ;;=>
-("Anath Rice, Age 22 8465A8"
- "Ensign Anos Hector, navy, Age 22 64CA68"
- "Artyn, Age 22 A26758"
- "Captain Awan Chao, army, Age 30 887874"
- "FourthOffc Chael Hammad III, merchant, Age 22 BB98BA"
- "Curt Huashi, MD, Age 38 BAAB77"
- "Captain Cynthias Denis, LMT, army, Age 26 632CA7"
- "Elsa Lorrainer, scouts, Age 22 8894B7"
- "Lieutenant Eora Oyle, army, Age 22 64A3B6"
- "Lieutenant Exandeep Serdar Uerite, army, Age 22 857A76"
- "Lieutenant Harenda Oachim, army, Age 22 B68745"
- "Homas Iana, navy, Age 34 836B75"
- "General Ichiel Amie, army, Age 50 287945"
- "FourthOffc Ingbai Ancy, merchant, Age 22 A78677"
- "Kinchao Cher, army, Age 22 783464"
- "Kurt Suresh III, Age 26 379B7A"
- "FourthOffc Lowell Miya, merchant, Age 22 C86A83"
- "M. Lynneth Hierry, Age 22 366625"
- "Lieutenant Mone Osur, army, Age 22 65AA73"
- "LtColonel Mrs. Stevan Nette, army, Age 34 4B8974"
- "Mrs. Thleen Rion, Age 22 A8A486"
- "Ms. Aanandal Ffrey Anley, Esq., marines, Age 22 B885A4"
- "FourthOffc Nhard Douglas, merchant, Age 22 7466B9"
- "FourthOffc Nrad Dhar, merchant, Age 26 7B87B4"
- "Ensign Obbin Udsen, navy, Age 42 797A89"
- "Onella Alain, Age 22 9739B9"
- "Pablo Effery, marines, Age 26 A875B9"
- "Rahul Icole Shyam, Ph.D., Age 22 694444"
- "Romain Urph, scouts, Age 26 969858"
- "Sir Dawn Tewart, Age 30 28328B"
- "Sir Rgiu Atap V, Age 26 96B557"
- "Lieutenant Skip Regg, army, Age 22 667B38"
- "Lieutenant Sr. Ward Ilner, LCPT, army, Age 22 895A68"
- "Tarmi Egory Ephen, navy, Age 26 636379"
- "Major Thias Jouke, army, Age 34 75B885"
- "Captain Vadim Aleb II, army, Age 26 B957A5"
- "Ylan Roland, navy, Age 22 935C67")
-
+["Grette Aime (F), scouts, 64A785"
+ "Orth Rman (M), 8887A5"
+ "Srta. Eranza Dward (F), 4A7454"
+ "FourthOffc Modessa Evilles Oshua Jayesh (F), merchant, 85A423"
+ "Ms. Sir Jenelorelei Enis (F), scouts, 87A84B"
+ "Jaquel Lance Yung Pontus Tommy (F), A68C88"
+ "Sra. Valyn Vern (F), scouts, A79699"
+ "Lord Ngus (M), scouts, 78A873"
+ "FourthOffc Ugio Reid Olis Sell Kelvin (F), merchant, 7BCA77"
+ "Sir Rashad Stewart (M), navy, 9B4955"
+ "Elease (F), scouts, 6CB754"
+ "Umbertram Acobson Vier Marek Anklin (M), 45A948"
+ "Lieutenant Arrencio Undar (M), army, 478584"
+ "FourthOffc Sir Chung Jimmy, I (M), merchant, 83A93B"
+ "Ms. Sir Linnea Igel (F), 89C36B"
+ "Eddy Ablo, IV (M), 5897C2"
+ "Zalo Huvra (M), 888883"
+ "LtCmdr Amon Mawan Lars, I (M), navy, 2A7BA7"
+ "Ms. Undra Ared (F), 786597"
+ "Lieutenant Dger Amsey (M), army, 54A679"
+ "Sell Reiner (M), 577963"
+ "FourthOffc Handrina Pyros (F), merchant, 58AB93"
+ "Udio (M), army, 879878"
+ "Captain Utumn Anacea (F), army, A39996"
+ "ThirdOffc Bret Mesh, Jr. (M), merchant, 665477"
+ "Fr. Tonet Eckie Vijay (F), 797947"
+ "Captain Articia Ajesh (F), marines, C76839"
+ "Sica (F), 853B79"
+ "Hestefana Ofer (F), army, 5463A5"
+ "FirstOffc Icaela Oleen (F), merchant, 382984"
+ "Captain Melonia Kayuki Elberto (F), army, C6A585"
+ "Maire Jinch Hael (F), scouts, 438968"
+ "Sir Hery Ughn Iber Ederic Indy (F), marines, 8C683B"
+ "Lieutenant Aryrosenaida Agnus (F), army, 747985"
+ "Lieutenant Ight Galentinos June (M), army, 98B872"]
