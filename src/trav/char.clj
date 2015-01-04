@@ -328,25 +328,28 @@
                                first-name
                                surnames
                                generation
+                               age
                                actual-service
                                rank-name
                                royal-form
                                attributes] :as char}]
   (let [prefix (if rank-name rank-name prefix)]
-    (apply str `(~@(if (and prefix
-                            (seq surnames)) [prefix " "])
-                 ~@ (if (and royal-form
-                             (seq surnames)) [royal-form " "])
-                    ~first-name
-                    ~(if (seq surnames) " " "")
-                    ~@(interpose " " surnames)
-                    ~@(if (and (seq surnames)
-                               generation) [", " generation])
-                    ~({:other ", " :male " (M), " :female " (F), "} gender)
-                    ~(if (= actual-service :other)
-                       ""
-                       (str (name actual-service) ", "))
-                    ~(upp char)))))
+    (apply str `(~@(when prefix [prefix " "])
+                 ~@ (when (and royal-form
+                               (seq surnames))
+                      [royal-form " "])
+                 ~first-name
+                 ~(if (seq surnames) " " "")
+                 ~@(interpose " " surnames)
+                 ~@(when (and (seq surnames)
+                              generation)
+                     [", " generation])
+                 ~({:other ", " :male " (M), " :female " (F), "} gender)
+                 ~age " yrs. old, "
+                 ~(if (= actual-service :other)
+                    ""
+                    (str (name actual-service) ", "))
+                 ~(upp char)))))
 
 
 ;; Example - character names + UPPs:
@@ -357,16 +360,16 @@
      vec)
 
 ;;=>
-["Ms. Lady Debi (F), merchant, 895849"
- "Emona Anan (F), marines, 87CB8A"
- "Mr. Nicholas Erman, III (M), 3B8393"
- "Ayson Joon (M), 878436"
- "Ms. Sir Ieko Bson (F), marines, 727A6B"
- "Kasandelany Orraine Ised Orne Hakil (F), merchant, 6289A7"
- "Ms. Osphina Hatter Loukas (F), army, 788849"
- "Sir Librada Will Luke Presley (F), navy, 75746B"
- "Ms. Noma Lexis (F), scouts, 45BA7A"
- "Oward Murat (M), army, B86744"]
+["Neida (F), 18 yrs. old, navy, 8837CA"
+ "Pamala Lila Hadow, 18 yrs. old, scouts, 875667"
+ "Miss Biola Dell Manjeev (F), 18 yrs. old, 6A6569"
+ "Mael Ablo (M), 18 yrs. old, scouts, A44765"
+ "Mr. Reyes Njay (M), 18 yrs. old, army, 685976"
+ "Enee Iping Rkeer Dory Muel (F), 18 yrs. old, scouts, 927598"
+ "Isha (M), 18 yrs. old, scouts, 7957A6"
+ "Ms. Utta Miro Jussi Byron (F), 18 yrs. old, navy, 7768AA"
+ "Nalistancey Trian Dwight Rtha (F), 18 yrs. old, 988789"
+ "Lyde Indranath (M), 18 yrs. old, navy, 782665"]
 
 
 ;; Example - full characters with name, rank, age and UPP:
@@ -378,38 +381,40 @@
      vec)
 
 ;;=>
-["Grette Aime (F), scouts, 64A785"
- "Orth Rman (M), 8887A5"
- "Srta. Eranza Dward (F), 4A7454"
- "FourthOffc Modessa Evilles Oshua Jayesh (F), merchant, 85A423"
- "Ms. Sir Jenelorelei Enis (F), scouts, 87A84B"
- "Jaquel Lance Yung Pontus Tommy (F), A68C88"
- "Sra. Valyn Vern (F), scouts, A79699"
- "Lord Ngus (M), scouts, 78A873"
- "FourthOffc Ugio Reid Olis Sell Kelvin (F), merchant, 7BCA77"
- "Sir Rashad Stewart (M), navy, 9B4955"
- "Elease (F), scouts, 6CB754"
- "Umbertram Acobson Vier Marek Anklin (M), 45A948"
- "Lieutenant Arrencio Undar (M), army, 478584"
- "FourthOffc Sir Chung Jimmy, I (M), merchant, 83A93B"
- "Ms. Sir Linnea Igel (F), 89C36B"
- "Eddy Ablo, IV (M), 5897C2"
- "Zalo Huvra (M), 888883"
- "LtCmdr Amon Mawan Lars, I (M), navy, 2A7BA7"
- "Ms. Undra Ared (F), 786597"
- "Lieutenant Dger Amsey (M), army, 54A679"
- "Sell Reiner (M), 577963"
- "FourthOffc Handrina Pyros (F), merchant, 58AB93"
- "Udio (M), army, 879878"
- "Captain Utumn Anacea (F), army, A39996"
- "ThirdOffc Bret Mesh, Jr. (M), merchant, 665477"
- "Fr. Tonet Eckie Vijay (F), 797947"
- "Captain Articia Ajesh (F), marines, C76839"
- "Sica (F), 853B79"
- "Hestefana Ofer (F), army, 5463A5"
- "FirstOffc Icaela Oleen (F), merchant, 382984"
- "Captain Melonia Kayuki Elberto (F), army, C6A585"
- "Maire Jinch Hael (F), scouts, 438968"
- "Sir Hery Ughn Iber Ederic Indy (F), marines, 8C683B"
- "Lieutenant Aryrosenaida Agnus (F), army, 747985"
- "Lieutenant Ight Galentinos June (M), army, 98B872"]
+["General Ster Urie, II (M), 50 yrs. old, army, 744688"
+ "FourthOffc Sir Aydee Irving (F), 34 yrs. old, merchant, 555ABB"
+ "Lieutenant Degarde Varda Arlie (F), 22 yrs. old, army, 74B627"
+ "Rafina Imon (F), 22 yrs. old, scouts, 674877"
+ "Lieutenant Parth Toku Irfan Ugih (F), 22 yrs. old, marines, B87A78"
+ "Lieutenant Odette Wilmer Judith (F), 22 yrs. old, army, 898953"
+ "ThirdOffc Rant Randi (M), 50 yrs. old, merchant, 822737"
+ "Lieutenant Arby Ewart (F), 22 yrs. old, army, 466558"
+ "Lieutenant Onse Mahesh (M), 22 yrs. old, army, 8888B6"
+ "Mrs. Erdie Stacey (F), 58 yrs. old, scouts, 479797"
+ "Mr. Kinley Alloy (M), 22 yrs. old, 395596"
+ "Captain Iquel Robin (M), 30 yrs. old, marines, 774357"
+ "Sebastian Jesper Dell (M), 22 yrs. old, navy, 7763A8"
+ "SecndOffc Ambrose Ahid Ienz (M), 34 yrs. old, merchant, 687C48"
+ "Mr. Hammed Aime Tagger (M), 26 yrs. old, 538C25"
+ "FourthOffc Ises Rnard (M), 34 yrs. old, merchant, 5BA797"
+ "Ms. Nelda Anaka Imawan (F), 22 yrs. old, scouts, A564A7"
+ "Ensign Ulee (F), 22 yrs. old, navy, 75493A"
+ "April Everly (F), 26 yrs. old, 577894"
+ "Lieutenant Sir Field Raig Brooke, I (M), 22 yrs. old, army, 9887AB"
+ "Major Dath Rgiu (F), 30 yrs. old, army, 686728"
+ "Captain Trius Sorrell Fred Fletchel Dmond (M), 26 yrs. old, army, 887957"
+ "Lieutenant Tangelique Ohong Ilot (F), 22 yrs. old, marines, 96B655"
+ "Emarcus Lanny Uglas Orne (M), 22 yrs. old, marines, 4A6728"
+ "SecndOffc Aurinda Atraj Rtis Tommy (F), 38 yrs. old, merchant, 877BAA"
+ "Ensign Calvin Ronni Gnus, II (M), 26 yrs. old, navy, B97BB7"
+ "Quinn Winston N-pierett Mothy, Sr. (M), 22 yrs. old, navy, 3A3B76"
+ "Mr. Sreal Erre (M), 26 yrs. old, 864463"
+ "Immie Llin Rich, Sr. (M), 26 yrs. old, 488235"
+ "Captain Onio (F), 26 yrs. old, army, 8658A6"
+ "FourthOffc Alizabethel Matt (F), 26 yrs. old, merchant, 47788A"
+ "Lieutenant Thew Jared Lcolm (M), 22 yrs. old, army, 857779"
+ "FourthOffc Ntonet Lliam Arty Jesper (F), 34 yrs. old, merchant, B74885"
+ "Captain Etrius Chris Llan Eany Taurus (M), 26 yrs. old, army, 578669"
+ "Captain Myong (F), 26 yrs. old, army, A87678"
+ "Rrellena Anaka Rnard Alcolm Ahmet (F), 38 yrs. old, 62BB7A"
+ "SecndOffc Sabet Daresan (F), 38 yrs. old, merchant, 47AAB5"]

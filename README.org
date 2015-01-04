@@ -44,6 +44,56 @@ still being used today.
 
 For now, see the [[https://github.com/eigenhombre/trav/blob/master/src/trav/char.clj][functions and examples]] in the =trav.char= namespace.
 
+Obligatory example:
+#+BEGIN_SRC clojure
+;; Example - full characters with name, rank, age and UPP:
+(->> make-character
+     (repeatedly 50)
+     (remove (complement :living?))  ;; Bring out yer dead!!!
+     (sort-by :name)
+     (map format-name-map)
+     vec)
+
+;;=>
+["General Ster Urie, II (M), 50 yrs. old, army, 744688"
+ "FourthOffc Sir Aydee Irving (F), 34 yrs. old, merchant, 555ABB"
+ "Lieutenant Degarde Varda Arlie (F), 22 yrs. old, army, 74B627"
+ "Rafina Imon (F), 22 yrs. old, scouts, 674877"
+ "Lieutenant Parth Toku Irfan Ugih (F), 22 yrs. old, marines, B87A78"
+ "Lieutenant Odette Wilmer Judith (F), 22 yrs. old, army, 898953"
+ "ThirdOffc Rant Randi (M), 50 yrs. old, merchant, 822737"
+ "Lieutenant Arby Ewart (F), 22 yrs. old, army, 466558"
+ "Lieutenant Onse Mahesh (M), 22 yrs. old, army, 8888B6"
+ "Mrs. Erdie Stacey (F), 58 yrs. old, scouts, 479797"
+ "Mr. Kinley Alloy (M), 22 yrs. old, 395596"
+ "Captain Iquel Robin (M), 30 yrs. old, marines, 774357"
+ "Sebastian Jesper Dell (M), 22 yrs. old, navy, 7763A8"
+ "SecndOffc Ambrose Ahid Ienz (M), 34 yrs. old, merchant, 687C48"
+ "Mr. Hammed Aime Tagger (M), 26 yrs. old, 538C25"
+ "FourthOffc Ises Rnard (M), 34 yrs. old, merchant, 5BA797"
+ "Ms. Nelda Anaka Imawan (F), 22 yrs. old, scouts, A564A7"
+ "Ensign Ulee (F), 22 yrs. old, navy, 75493A"
+ "April Everly (F), 26 yrs. old, 577894"
+ "Lieutenant Sir Field Raig Brooke, I (M), 22 yrs. old, army, 9887AB"
+ "Major Dath Rgiu (F), 30 yrs. old, army, 686728"
+ "Captain Trius Sorrell Fred Fletchel Dmond (M), 26 yrs. old, army, 887957"
+ "Lieutenant Tangelique Ohong Ilot (F), 22 yrs. old, marines, 96B655"
+ "Emarcus Lanny Uglas Orne (M), 22 yrs. old, marines, 4A6728"
+ "SecndOffc Aurinda Atraj Rtis Tommy (F), 38 yrs. old, merchant, 877BAA"
+ "Ensign Calvin Ronni Gnus, II (M), 26 yrs. old, navy, B97BB7"
+ "Quinn Winston N-pierett Mothy, Sr. (M), 22 yrs. old, navy, 3A3B76"
+ "Mr. Sreal Erre (M), 26 yrs. old, 864463"
+ "Immie Llin Rich, Sr. (M), 26 yrs. old, 488235"
+ "Captain Onio (F), 26 yrs. old, army, 8658A6"
+ "FourthOffc Alizabethel Matt (F), 26 yrs. old, merchant, 47788A"
+ "Lieutenant Thew Jared Lcolm (M), 22 yrs. old, army, 857779"
+ "FourthOffc Ntonet Lliam Arty Jesper (F), 34 yrs. old, merchant, B74885"
+ "Captain Etrius Chris Llan Eany Taurus (M), 26 yrs. old, army, 578669"
+ "Captain Myong (F), 26 yrs. old, army, A87678"
+ "Rrellena Anaka Rnard Alcolm Ahmet (F), 38 yrs. old, 62BB7A"
+ "SecndOffc Sabet Daresan (F), 38 yrs. old, merchant, 47AAB5"]
+#+END_SRC
+
 #+ATTR_HTML: image :align left :clear both :width 200 :padding-right 30
 [[./images/trav.png]]
 
