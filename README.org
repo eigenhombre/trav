@@ -42,7 +42,7 @@ still being used today.
 
 * Usage
 
-For now, see the [[https://github.com/eigenhombre/trav/blob/master/src/trav/char.clj][functions and examples]] in the =char= namespace.
+For now, see the [[https://github.com/eigenhombre/trav/blob/master/src/trav/char.clj][functions and examples]] in the =trav.char= namespace.
 
 #+ATTR_HTML: image :align left :clear both :width 200 :padding-right 30
 [[./images/trav.png]]
