@@ -40,6 +40,17 @@ still being used today.
 - Character and ship combat
 - ...
 
+* Getting it
+
+For the moment, you'll need to check out this repo and =lein install=
+it.  Eventually it will probably go up on Clojars.
+
+* Contributing
+
+Pull requests welcome, but only for Classic Traveller, please.  I'm
+trying to stay within the constraints of the Little Black Books for
+now.
+
 * Usage
 
 For now, see the [[https://github.com/eigenhombre/trav/blob/master/src/trav/char.clj][functions and examples]] in the =trav.char= namespace.
