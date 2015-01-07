@@ -89,7 +89,7 @@
 
 (defmacro def-selection-table [tname & rows]
   `(do (def ~tname
-         (->> (quote ~rows)
+         (->> '~rows
               (partition 7)
               (mapcat selection-row-vec)
               (apply hash-map)))
@@ -103,6 +103,29 @@
   scouts   -          -          -         -         -       -
   merchant FourthOffc ThirdOffc  SecndOffc FirstOffc Captain -
   other    -          -          -         -         -       -)
+
+
+(defmacro def-aging-table [tname & rows]
+  `(do (def ~tname
+         (->> '~rows
+              (partition-by symbol?)
+              (apply concat)
+              (map (fn [s#] (if (symbol? s#) (keywordize s#) s#)))
+              (apply hash-map)))
+       ~tname))
+
+
+(def-aging-table aging
+  ST {34 [-1 8]
+      50 [-1 9]
+      66 [-2 9]}
+  DX {34 [-1 7]
+      50 [-1 8]
+      66 [-2 9]}
+  EN {34 [-1 8]
+      50 [-1 9]
+      66 [-2 9]}
+  IN {66 [-1 9]})
 
 
 (defn char-attr-map []
@@ -303,15 +326,56 @@
       (assoc char :reinlisting? reinlisting?))))
 
 
+(defn handle-age-induced-illness
+  "
+  If attr drops below 1, see if death occurs (fail 8+ throw); if not,
+  restore to 1.
+  "
+  [char attr]
+  (let [a (-> char :attributes attr)]
+    (cond
+     (> a 0) char
+     (>= (d) 8) (assoc-in char [:attributes attr] 1)
+     :else (-> char
+               (assoc :living? false)
+               (assoc-in [:attributes attr] 0)))))
+
+
+(defn apply-age-to-attribute [char attr]
+  (let [age (:age char)
+        {[delta throw-required] age} (attr aging)]
+    (if (and delta (< (d) throw-required))
+      (-> char
+          (update-in [:attributes attr] + delta)
+          (handle-age-induced-illness attr))
+      char)))
+
+
+(defn maybe-damage-for-age [char]
+  (reduce apply-age-to-attribute char (keys aging)))
+
+
+(defn age-one-year [char]
+  (-> char
+      (update-in [:age] inc)
+      maybe-damage-for-age))
+
+
+(defn age-one-term [char]
+  (->> char
+       (iterate age-one-year)
+       (#(nth % 4))))
+
+
 (defn apply-term-of-service [char]
   (-> char
       maybe-kill
       maybe-promote
       maybe-reinlist
+      age-one-term))
       ;; TODO: skills
       ;; TODO: posessions
-      ;; TODO: aging
-      age))
+
 
 
 (defn make-character []
@@ -418,3 +482,59 @@
  "Captain Myong (F), 26 yrs. old, army, A87678"
  "Rrellena Anaka Rnard Alcolm Ahmet (F), 38 yrs. old, 62BB7A"
  "SecndOffc Sabet Daresan (F), 38 yrs. old, merchant, 47AAB5"]
+
+
+;; Effects of aging... note UPP:
+(->> (starting-character)
+     (iterate age-one-term)
+     (take 20)
+     (map format-name-map)
+     vec)
+
+
+;;=>
+["Kierstenesha Rolin (F), 18 yrs. old, army, 588747"
+ "Kierstenesha Rolin (F), 22 yrs. old, army, 588747"
+ "Kierstenesha Rolin (F), 26 yrs. old, army, 588747"
+ "Kierstenesha Rolin (F), 30 yrs. old, army, 588747"
+ "Kierstenesha Rolin (F), 34 yrs. old, army, 487747"
+ "Kierstenesha Rolin (F), 38 yrs. old, army, 487747"
+ "Kierstenesha Rolin (F), 42 yrs. old, army, 487747"
+ "Kierstenesha Rolin (F), 46 yrs. old, army, 487747"
+ "Kierstenesha Rolin (F), 50 yrs. old, army, 376747"
+ "Kierstenesha Rolin (F), 54 yrs. old, army, 376747"
+ "Kierstenesha Rolin (F), 58 yrs. old, army, 376747"
+ "Kierstenesha Rolin (F), 62 yrs. old, army, 376747"
+ "Kierstenesha Rolin (F), 66 yrs. old, army, 356647"
+ "Kierstenesha Rolin (F), 70 yrs. old, army, 356647"
+ "Kierstenesha Rolin (F), 74 yrs. old, army, 356647"
+ "Kierstenesha Rolin (F), 78 yrs. old, army, 356647"
+ "Kierstenesha Rolin (F), 82 yrs. old, army, 356647"
+ "Kierstenesha Rolin (F), 86 yrs. old, army, 356647"
+ "Kierstenesha Rolin (F), 90 yrs. old, army, 356647"
+ "Kierstenesha Rolin (F), 94 yrs. old, army, 356647"]
+
+
+;; Death from old age:
+(->> (starting-character)
+     (iterate age-one-term)
+     (take 20)
+     last)
+
+;;=>
+{:royal-form nil,
+ :reinlisting? true,
+ :actual-service :navy,
+ :generation nil,
+ :age 94,
+ :commissioned? false,
+ :living? false,
+ :rank 0,
+ :first-name "Eika",
+ :surnames '("Herman" "Meehan"),
+ :prefix "Ms.",
+ :drafted? true,
+ :rank-name nil,
+ :desired-service :marines,
+ :gender :female,
+ :attributes {:ss 4, :ed 7, :in 9, :en 0, :dx 1, :st 1}}

@@ -24,12 +24,11 @@ more) for [[http://en.wikipedia.org/wiki/Traveller_%28role-playing_game%29#Trave
 - Characters
   - Name selection
   - Service determination
-  - Commissioning, promotion, reinlistment, survival, aging
+  - Commissioning, promotion, reinlistment, survival, aging (incl. aging damage/death)
   - Standard formatting, incl. UPPs
 
 ** Ambitions
 - Characters
-  - Aging damage
   - Skill selection
   - Benefits
   - Equipment/possessions
