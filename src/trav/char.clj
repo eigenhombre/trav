@@ -4,6 +4,7 @@
             [namejen.names :refer [gen-name-data-as-map]]))
 
 
+;; Utilities:
 (defn keywordize [s]
   (-> s
       name
@@ -11,6 +12,7 @@
       keyword))
 
 
+;; Macro definitions for tables, etc.:
 (defmacro defcoll [name & syms]
   `(def ~name (map keywordize (quote ~syms))))
 
@@ -32,6 +34,45 @@
               (mapcat row-vec)
               (apply hash-map)))
        ~tname))
+
+
+(defn selection-row-vec [[svc & elts]]
+  [(keyword svc) (map #(if (= % '-) nil %) elts)])
+
+
+(defmacro def-selection-table [tname & rows]
+  `(do (def ~tname
+         (->> '~rows
+              (partition 7)
+              (mapcat selection-row-vec)
+              (apply hash-map)))
+       ~tname))
+
+
+(defmacro def-aging-table [tname & rows]
+  `(do (def ~tname
+         (->> '~rows
+              (partition-by symbol?)
+              (apply concat)
+              (map (fn [s#] (if (symbol? s#) (keywordize s#) s#)))
+              (apply hash-map)))
+       ~tname))
+
+
+(defmacro def-skill-table [tname & data]
+  `(do
+     (def ~tname
+       (let [svcs# (map keywordize (take 6 '~data))
+             rows# (->> '~data
+                        (drop 6)
+                        (partition 7)
+                        (map (partial map str))
+                        (map (comp (partial map vector) rest)))]
+         (->> rows#
+              (map (partial interleave svcs#))
+              (map (partial apply hash-map))
+              (apply (partial merge-with (comp vec concat))))))
+     ~tname))
 
 
 (defcoll attributes ST DX EN IN ED SS)
@@ -83,19 +124,6 @@
   other    5 [])
 
 
-(defn selection-row-vec [[svc & elts]]
-  [(keyword svc) (map #(if (= % '-) nil %) elts)])
-
-
-(defmacro def-selection-table [tname & rows]
-  `(do (def ~tname
-         (->> '~rows
-              (partition 7)
-              (mapcat selection-row-vec)
-              (apply hash-map)))
-       ~tname))
-
-
 (def-selection-table ranks
   navy     Ensign     Lieutenant LtCmdr    Commander Captain Admiral
   marines  Lieutenant Captain    ForceCmdr LtColonel Colonel Brigadier
@@ -103,16 +131,6 @@
   scouts   -          -          -         -         -       -
   merchant FourthOffc ThirdOffc  SecndOffc FirstOffc Captain -
   other    -          -          -         -         -       -)
-
-
-(defmacro def-aging-table [tname & rows]
-  `(do (def ~tname
-         (->> '~rows
-              (partition-by symbol?)
-              (apply concat)
-              (map (fn [s#] (if (symbol? s#) (keywordize s#) s#)))
-              (apply hash-map)))
-       ~tname))
 
 
 (def-aging-table aging
@@ -126,6 +144,33 @@
       50 [-1 9]
       66 [-2 9]}
   IN {66 [-1 9]})
+
+
+(def-skill-table advanced-education-table
+          navy    marines       army     scouts   merchant      other
+  1   VaccSuit        ATV        ATV    AirRaft Streetwise Streetwise
+  2 Mechanical Mechanical Mechanical Mechanical Mechanical Mechanical
+  3 Electronic Electronic Electronic Electronic Electronic Electronic
+  4    Engnrng    Tactics    Tactics   Jack-o-T Navigation   Gambling
+  5    Gunnery   BladeCbt   BladeCbt    Gunnery    Gunnery   Brawling
+  6   Jack-o-T     GunCbt     GunCbt    Medical    Medical    Forgery)
+
+;; ;;=>
+;; {:other
+;;  ["Streetwise" "Mechanical" "Electronic" "Gambling" "Brawling" "Forgery"],
+;;  :navy
+;;  ["VaccSuit" "Mechanical" "Electronic" "Engnrng" "Gunnery" "Jack-o-T"],
+;;  :scouts
+;;  ["AirRaft" "Mechanical" "Electronic" "Jack-o-T" "Gunnery" "Medical"],
+;;  :army
+;;  ["ATV" "Mechanical" "Electronic" "Tactics" "BladeCbt" "GunCbt"],
+;;  :merchant
+;;  ["Streetwise" "Mechanical" "Electronic" "Navigation" "Gunnery" "Medical"],
+;;  :marines
+;;  ["ATV" "Mechanical" "Electronic" "Tactics" "BladeCbt" "GunCbt"]}
+
+
+;; Character determination:
 
 
 (defn char-attr-map []
@@ -384,9 +429,23 @@
     (update-in char [:terms-reached] inc)))
 
 
+;; FIXME: add other tables:
+(defn add-skill [{:keys [actual-service] :as char}]
+  (let [skill (-> advanced-education-table actual-service rand-nth)]
+    (update-in char [:skills] conj skill)))
+
+
+
+(defn add-skills-for-service-term [{:keys [terms-reached] :as char}]
+  (if (= terms-reached 1)
+    (-> char add-skill add-skill)
+    (-> char add-skill)))
+
+
 (defn apply-term-of-service [char]
   (-> char
       increment-service-term
+      add-skills-for-service-term
       maybe-kill
       maybe-promote
       maybe-reinlist
@@ -556,3 +615,50 @@
  :desired-service :marines,
  :gender :female,
  :attributes {:ss 4, :ed 7, :in 9, :en 0, :dx 1, :st 1}}
+
+
+;; Skills for characters:
+(->> make-character
+     (repeatedly 20)
+     (map (juxt format-name-map :skills)))
+
+;;=>
+(["Ensign Illermo Mond Madoss Revor (M), 22 yrs. old, navy, 464775"
+  ("Mechanical" "Mechanical")]
+ ["Lieutenant Shia Yesh Nute Idhar Gunter (F), 26 yrs. old, marines, 898649"
+  ("Tactics" "ATV" "Mechanical")]
+ ["Fr. Nefer Liyuan (F), 22 yrs. old, 793C69" ("Brawling" "Forgery")]
+ ["Ms. Fana Sherman (F), 22 yrs. old, merchant, 27C879"
+  ("Mechanical" "Navigation")]
+ ["FourthOffc Brendan Ndries, V (M), 22 yrs. old, merchant, 7C7787"
+  ("Gunnery" "Navigation")]
+ ["Tyisha Areq Ning (F), 22 yrs. old, marines, 834868"
+  ("Tactics" "GunCbt")]
+ ["Omer Orbert, V (M), 22 yrs. old, 367886"
+  ("Mechanical" "Electronic")]
+ ["Ms. Lindy Jaak Nick (F), 26 yrs. old, scouts, 776784"
+  ("Electronic" "Medical" "Electronic")]
+ ["Hlea Thuan (F), 22 yrs. old, scouts, AB4627"
+  ("Mechanical" "Gunnery")]
+ ["Lieutenant Aina Madoss (F), 22 yrs. old, army, B98886"
+  ("Electronic" "Electronic")]
+ ["Eomi Immo (F), 22 yrs. old, navy, 5B3485" ("Gunnery" "Gunnery")]
+ ["Millard Elge Orien (M), 22 yrs. old, marines, B98965"
+  ("Tactics" "Tactics")]
+ ["FourthOffc Sir Thanna Shaw (F), 26 yrs. old, merchant, 7786AB"
+  ("Navigation" "Gunnery" "Streetwise")]
+ ["Lieutenant Cenzo (M), 22 yrs. old, army, 34769A"
+  ("GunCbt" "Mechanical")]
+ ["Lance Ahsin (M), 30 yrs. old, 59863A"
+  ("Streetwise" "Streetwise" "Brawling" "Electronic")]
+ ["Leopoldo Ominic, Sr. (M), 26 yrs. old, scouts, 9847A6"
+  ("Mechanical" "AirRaft" "AirRaft")]
+ ["Udrie Janice Kevyn (F), 22 yrs. old, scouts, 5BBA46"
+  ("Mechanical" "Jack-o-T")]
+ ["Mr. Arlon Nute Vaughn, I (M), 22 yrs. old, marines, 96A689"
+  ("GunCbt" "BladeCbt")]
+ ["Erwoodrow Morris (M), 22 yrs. old, merchant, 2A7A84"
+  ("Mechanical" "Streetwise")]
+ ["Mrs. Nyatta Pilar Tonio (F), 22 yrs. old, scouts, 79A663"
+  ("Mechanical" "Gunnery")])
+
