@@ -28,10 +28,9 @@ more) for [[http://en.wikipedia.org/wiki/Traveller_%28role-playing_game%29#Trave
   - Standard formatting, incl. UPPs
 
 ** Ambitions
-- Characters
-  - Skill selection
-  - Benefits
-  - Equipment/possessions
+- Character skill selection
+- Character benefits
+- Character equipment/possessions
 - Worlds ("Scouts"-based system generation)
 - Encounters
 - Starships
@@ -47,8 +46,8 @@ it.  Eventually it will probably go up on Clojars.
 * Contributing
 
 Pull requests welcome, but only for Classic Traveller, please.  I'm
-trying to stay within the constraints of the Little Black Books for
-now.
+trying to stay within the constraints of the original Little Black
+Books for now (Scouts, Mercenary and High Guard OK).
 
 * Usage
 

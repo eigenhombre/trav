@@ -284,6 +284,16 @@
       char)))
 
 
+(defn qualified-for-commission?
+  "
+  Draftees in their first term of service are not eligible for
+  commissions.
+  "
+  [char]
+  (or (not (:drafted? char))
+      (> (:terms-reached char) 1)))
+
+
 (defn maybe-promote [char]
   (cond
    (not (:living? char)) char
@@ -291,7 +301,8 @@
                               promotion char)
                            (maybe-increase-rank char)
                            char)
-   :else (if (roll-for-service-table-succeeds? commission char)
+   :else (if (and (qualified-for-commission? char)
+                  (roll-for-service-table-succeeds? commission char))
            (-> char
                (assoc :commissioned? true)
                maybe-increase-rank)
@@ -367,8 +378,15 @@
        (#(nth % 4))))
 
 
+(defn increment-service-term [{:keys [terms-reached] :as char}]
+  (if (nil? terms-reached)
+    (assoc char :terms-reached 1)
+    (update-in char [:terms-reached] inc)))
+
+
 (defn apply-term-of-service [char]
   (-> char
+      increment-service-term
       maybe-kill
       maybe-promote
       maybe-reinlist
