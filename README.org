@@ -52,9 +52,48 @@ Books for now (Scouts, Mercenary and High Guard OK).
 
 * Usage
 
-For now, see the [[https://github.com/eigenhombre/trav/blob/master/src/trav/char.clj][functions and examples]] in the =trav.char= namespace.
+See the [[https://github.com/eigenhombre/trav/blob/master/src/trav/char.clj][functions and examples]] in the =trav.char= namespace.  Or, roll
+up a few characters on the command line:
 
-Obligatory example:
+#+BEGIN_EXAMPLE
+$  lein run
+Khadijah Rant (F), 30 yrs. old, scouts, 534993
+Computer-1, GunCbt-1, VaccSuit-1
+
+FourthOffc Von Tiesha Xandell Presley Herrie Elvis (F), 30 yrs. old, merchant, 97AA8C
+Pilot-1, BladeCbt-1, Navigation-1, Electronic-1
+
+Ms. Elga Inivasanobu Ndip Obby (F), 30 yrs. old, scouts, B9B974
+GunCbt-1, Navigation-1, Medical-1
+
+Lieutenant Sarion Marc (M), 26 yrs. old, marines, 465A69
+Mechanical-1, BladeCbt-2, GunCbt-1
+
+M. Rlie Dent Elvis, Sr. (M), 22 yrs. old, army, B3C776
+ATV-1
+
+FourthOffc Dridge Odericky Anand, 22 yrs. old, merchant, D8A678
+Brawling-1, Medical-1
+
+FourthOffc Bree Shakil Armon (F), 26 yrs. old, merchant, 995536
+VaccSuit-1, Brawling-1, Streetwise-2
+
+Lieutenant Ermaine Axel (M), 22 yrs. old, army, 2655A7
+Tactics-1, Brawling-1, FwdObsv-1, Medical-1
+
+Lieutenant Sheena Laureen (F), 22 yrs. old, army, 46B968
+Tactics-1, GunCbt-2
+
+Ms. Razon Tler (F), 22 yrs. old, 4AA687
+Brawling-1
+
+$
+#+END_EXAMPLE
+
+The main method takes an arbitrary integer number of characters to
+generate (default 50).
+
+Example from the REPL:
 #+BEGIN_SRC clojure
 ;; Example - full characters with name, rank, age and UPP:
 (->> make-character
