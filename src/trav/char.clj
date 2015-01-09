@@ -1,192 +1,8 @@
 (ns trav.char
   (:require [trav.dice :refer [d]]
-            [trav.util :refer [hexcode take-until]]
+            [trav.util :refer [hexcode take-until keywordize]]
+            [trav.tables :refer :all]
             [namejen.names :refer [gen-name-data-as-map]]))
-
-
-;; Utilities:
-(defn keywordize [s]
-  (-> s
-      name
-      (#(.toLowerCase %))
-      keyword))
-
-
-;; Macro definitions for tables, etc.:
-(defmacro defcoll [name & syms]
-  `(def ~name (map keywordize (quote ~syms))))
-
-
-(defn- row-vec [[service base-roll dms]]
-  [(keyword service) {:base-roll (if (= base-roll '-)
-                                   Double/POSITIVE_INFINITY
-                                   base-roll)
-                      :dms (map (fn [[attr thresh _ dm]]
-                                  {:attr (keywordize attr)
-                                   :thresh thresh
-                                   :dm dm})
-                                (partition 4 dms))}])
-
-
-(defmacro def-service-table [tname & service-rows]
-  `(do (def ~tname
-         (->> (quote ~(partition 3 service-rows))
-              (mapcat row-vec)
-              (apply hash-map)))
-       ~tname))
-
-
-(defn selection-row-vec [[svc & elts]]
-  [(keyword svc) (map #(if (= % '-) nil %) elts)])
-
-
-(defmacro def-selection-table [tname & rows]
-  `(do (def ~tname
-         (->> '~rows
-              (partition 7)
-              (mapcat selection-row-vec)
-              (apply hash-map)))
-       ~tname))
-
-
-(defmacro def-aging-table [tname & rows]
-  `(do (def ~tname
-         (->> '~rows
-              (partition-by symbol?)
-              (apply concat)
-              (map (fn [s#] (if (symbol? s#) (keywordize s#) s#)))
-              (apply hash-map)))
-       ~tname))
-
-
-(defmacro def-skill-table [tname & data]
-  `(do
-     (def ~tname
-       (let [svcs# (map keywordize (take 6 '~data))
-             rows# (->> '~data
-                        (drop 6)
-                        (partition 7)
-                        (map (partial map str))
-                        (map (comp (partial map vector) rest)))]
-         (->> rows#
-              (map (partial interleave svcs#))
-              (map (partial apply hash-map))
-              (apply (partial merge-with (comp vec concat))))))
-     ~tname))
-
-
-(defcoll attributes ST DX EN IN ED SS)
-(defcoll services navy marines army scouts merchant other)
-
-
-(def-service-table enlistment
-  navy     8 [IN 8 -> +1, ED 9 -> +2]
-  marines  9 [IN 8 -> +1, ST 8 -> +2]
-  army     5 [DX 6 -> +1, EN 5 -> +2]
-  scouts   7 [IN 6 -> +1, ST 8 -> +2]
-  merchant 7 [ST 7 -> +1, IN 6 -> +2]
-  other    3 [])
-
-
-(def-service-table survival
-  navy     5 [IN 7 -> +2]
-  marines  6 [EN 8 -> +2]
-  army     5 [ED 6 -> +2]
-  scouts   7 [EN 9 -> +2]
-  merchant 5 [IN 7 -> +2]
-  other    5 [IN 9 -> +2])
-
-
-(def-service-table commission
-  navy     10 [SS 9 -> +1]
-  marines  9  [ED 7 -> +1]
-  army     5  [EN 7 -> +1]
-  scouts   -  []
-  merchant 4  [IN 6 -> +1]
-  other    -  [])
-
-
-(def-service-table promotion
-  navy     8  [ED 8 -> +1]
-  marines  9  [SS 8 -> +1]
-  army     6  [ED 7 -> +1]
-  scouts   -  []
-  merchant 10 [IN 9 -> +1]
-  other    -  [])
-
-
-(def-service-table reinlist
-  navy     6 []
-  marines  6 []
-  army     7 []
-  scouts   3 []
-  merchant 4 []
-  other    5 [])
-
-
-(def-selection-table ranks
-  navy     Ensign     Lieutenant LtCmdr    Commander Captain Admiral
-  marines  Lieutenant Captain    ForceCmdr LtColonel Colonel Brigadier
-  army     Lieutenant Captain    Major     LtColonel Colonel General
-  scouts   -          -          -         -         -       -
-  merchant FourthOffc ThirdOffc  SecndOffc FirstOffc Captain -
-  other    -          -          -         -         -       -)
-
-
-(def-aging-table aging
-  ST {34 [-1 8]
-      50 [-1 9]
-      66 [-2 9]}
-  DX {34 [-1 7]
-      50 [-1 8]
-      66 [-2 9]}
-  EN {34 [-1 8]
-      50 [-1 9]
-      66 [-2 9]}
-  IN {66 [-1 9]})
-
-
-(def-skill-table personal-development-table
-          navy   marines        army     scouts   merchant      other
-  1       ST+1       ST+1       ST+1       ST+1       ST+1       ST+1
-  2       DX+1       DX+1       DX+1       DX+1       DX+1       DX+1
-  3       EN+1       EN+1       EN+1       EN+1       EN+1       EN+1
-  4       SS+1   Gambling   Gambling     GunCbt       ST+1   BladeCbt
-  5       IN+1   Brawling   Brawling       IN+1   BladeCbt   Brawling
-  6       ED+1   BladeCbt       ED+1       ED+1   Brawling       SS-1)
-
-
-(def-skill-table service-skills-table
-          navy   marines        army     scouts   merchant      other
-  1  ShipsBoat       ATV         ATV    AirRaft    Steward    Forgery
-  2   VaccSuit  VaccSuit     AirRaft   VaccSuit   VaccSuit   Gambling
-  3    FwdObsv  BladeCbt     FwdObsv Navigation       ST+1   Brawling
-  4   BladeCbt  BladeCbt    BladeCbt Mechanical     GunCbt   BladeCbt
-  5     GunCbt    GunCbt      GunCbt Electronic Electronic     GunCbt
-  6    Gunnery    GunCbt      GunCbt   Jack-o-T   Jack-o-T    Bribery)
-
-
-(def-skill-table advanced-education-table
-          navy    marines       army     scouts   merchant      other
-  1   VaccSuit        ATV        ATV    AirRaft Streetwise Streetwise
-  2 Mechanical Mechanical Mechanical Mechanical Mechanical Mechanical
-  3 Electronic Electronic Electronic Electronic Electronic Electronic
-  4    Engnrng    Tactics    Tactics   Jack-o-T Navigation   Gambling
-  5    Gunnery   BladeCbt   BladeCbt    Gunnery    Gunnery   Brawling
-  6   Jack-o-T     GunCbt     GunCbt    Medical    Medical    Forgery)
-
-
-(def-skill-table advanced-education-table-2
-          navy    marines       army     scouts   merchant      other
-  1    Medical    Medical    Medical    Medical    Medical    Medical
-  2 Navigation    Tactics    Tactics Navigation Navigation    Forgery
-  3    Engnrng    Tactics    Tactics    Engnrng    Engnrng Electronic
-  4   Computer   Computer   Computer   Computer   Computer   Computer
-  5      Pilot     Leader     Leader      Pilot      Pilot Streetwise
-  6      Admin      Admin      Admin   Jack-o-T      Admin   Jack-o-T)
-
-
-;; Character determination:
 
 
 (defn char-attr-map []
@@ -309,18 +125,19 @@
    :attributes {:ss 12, :ed 8, :in 5, :en 2, :dx 6, :st 7}}]
 
 
-(defprotocol UPP
-  (upp [this]))
+(defn upp [char]
+  (->> char
+       :attributes
+       (#(map % attributes))
+       (map hexcode)
+       (apply str)))
 
 
-(extend-protocol UPP
-  clojure.lang.PersistentHashMap
-  (upp [this]
-    (->> this
-         :attributes
-         (#(map % attributes))
-         (map hexcode)
-         (apply str))))
+(defn skills-str [{skills :skills}]
+  (->> skills
+       (map (fn [[a b]] (format "%s-%s" a b)))
+       (interpose ", ")
+       (apply str)))
 
 
 (defn as-syms [s] (vec (map symbol (clojure.string/split s #" "))))
@@ -335,13 +152,53 @@
 
 
 ;; Terms of service
+(defn select-skill-table [{{ed :ed} :attributes}]
+  (->> [personal-development-table
+        service-skills-table
+        advanced-education-table
+        advanced-education-table-2]
+       (take (if (>= ed 8) 4 3))
+       rand-nth))
+
+
+(defn attribute-change
+  "
+  Handle DX+1 or SS-1 type 'skills', yielding a map when given that
+  sort of symbol, otherwise nil.
+  "
+  [sym]
+  (if-let [[_ sattr snum] (->> sym name (re-find #"(\w{2})([+-]\d+)"))]
+    {:attr (keywordize sattr)
+     :delta (Integer. snum)}))
+
+
+(defn add-skill [{:keys [actual-service living?] :as char}]
+  (if-not living?
+    char
+    (let [skill (-> (select-skill-table char) actual-service rand-nth)]
+      (if-let [{attr :attr, delta :delta} (attribute-change skill)]
+        (update-in char [:attributes attr] + delta)
+        (update-in char [:skills skill] (fnil inc 0))))))
+
+
+(defn add-skills-for-service-term
+  "
+  First term yields two skills; subsequent terms yield one.
+  "
+  [{:keys [terms-reached] :as char}]
+  (if (= terms-reached 1)
+    (-> char add-skill add-skill)
+    (-> char add-skill)))
+
+
 (defn maybe-increase-rank [char]
   (let [rank-vals (vec (ranks (:actual-service char)))
         rank-name (get rank-vals (:rank char))]
     (if rank-name
       (-> char
           (update-in [:rank] inc)
-          (assoc :rank-name (str rank-name)))
+          (assoc :rank-name (str rank-name))
+          add-skill)
       char)))
 
 
@@ -366,6 +223,7 @@
                   (roll-for-service-table-succeeds? commission char))
            (-> char
                (assoc :commissioned? true)
+               add-skill
                maybe-increase-rank)
            char)))
 
@@ -445,26 +303,6 @@
     (update-in char [:terms-reached] inc)))
 
 
-(defn select-skill-table [{{ed :ed} :attributes}]
-  (->> [personal-development-table
-        service-skills-table
-        advanced-education-table
-        advanced-education-table-2]
-       (take (if (>= ed 8) 4 3))
-       rand-nth))
-
-
-(defn add-skill [{:keys [actual-service] :as char}]
-  (let [skill (-> (select-skill-table char) actual-service rand-nth)]
-    (update-in char [:skills] conj skill)))
-
-
-(defn add-skills-for-service-term [{:keys [terms-reached] :as char}]
-  (if (= terms-reached 1)
-    (-> char add-skill add-skill)
-    (-> char add-skill)))
-
-
 (defn apply-term-of-service [char]
   (-> char
       increment-service-term
@@ -477,13 +315,17 @@
       ;; TODO: posessions
 
 
+;; YAH: mustering out benefits
+(defn muster-out [char] char)
+
 
 (defn make-character []
   (->> (starting-character)
        (iterate apply-term-of-service)
        (take-until (fn [m] (or (not (:reinlisting? m))
                                (not (:living? m)))))
-       last))
+       last
+       muster-out))
 
 
 ;; Adapted from eigenhombre/namejen:
@@ -541,47 +383,78 @@
      (repeatedly 50)
      (remove (complement :living?))  ;; Bring out yer dead!!!
      (sort-by :name)
-     (map format-name-map)
+     (map (juxt format-name-map skills-str))
      vec)
 
 ;;=>
-["General Ster Urie, II (M), 50 yrs. old, army, 744688"
- "FourthOffc Sir Aydee Irving (F), 34 yrs. old, merchant, 555ABB"
- "Lieutenant Degarde Varda Arlie (F), 22 yrs. old, army, 74B627"
- "Rafina Imon (F), 22 yrs. old, scouts, 674877"
- "Lieutenant Parth Toku Irfan Ugih (F), 22 yrs. old, marines, B87A78"
- "Lieutenant Odette Wilmer Judith (F), 22 yrs. old, army, 898953"
- "ThirdOffc Rant Randi (M), 50 yrs. old, merchant, 822737"
- "Lieutenant Arby Ewart (F), 22 yrs. old, army, 466558"
- "Lieutenant Onse Mahesh (M), 22 yrs. old, army, 8888B6"
- "Mrs. Erdie Stacey (F), 58 yrs. old, scouts, 479797"
- "Mr. Kinley Alloy (M), 22 yrs. old, 395596"
- "Captain Iquel Robin (M), 30 yrs. old, marines, 774357"
- "Sebastian Jesper Dell (M), 22 yrs. old, navy, 7763A8"
- "SecndOffc Ambrose Ahid Ienz (M), 34 yrs. old, merchant, 687C48"
- "Mr. Hammed Aime Tagger (M), 26 yrs. old, 538C25"
- "FourthOffc Ises Rnard (M), 34 yrs. old, merchant, 5BA797"
- "Ms. Nelda Anaka Imawan (F), 22 yrs. old, scouts, A564A7"
- "Ensign Ulee (F), 22 yrs. old, navy, 75493A"
- "April Everly (F), 26 yrs. old, 577894"
- "Lieutenant Sir Field Raig Brooke, I (M), 22 yrs. old, army, 9887AB"
- "Major Dath Rgiu (F), 30 yrs. old, army, 686728"
- "Captain Trius Sorrell Fred Fletchel Dmond (M), 26 yrs. old, army, 887957"
- "Lieutenant Tangelique Ohong Ilot (F), 22 yrs. old, marines, 96B655"
- "Emarcus Lanny Uglas Orne (M), 22 yrs. old, marines, 4A6728"
- "SecndOffc Aurinda Atraj Rtis Tommy (F), 38 yrs. old, merchant, 877BAA"
- "Ensign Calvin Ronni Gnus, II (M), 26 yrs. old, navy, B97BB7"
- "Quinn Winston N-pierett Mothy, Sr. (M), 22 yrs. old, navy, 3A3B76"
- "Mr. Sreal Erre (M), 26 yrs. old, 864463"
- "Immie Llin Rich, Sr. (M), 26 yrs. old, 488235"
- "Captain Onio (F), 26 yrs. old, army, 8658A6"
- "FourthOffc Alizabethel Matt (F), 26 yrs. old, merchant, 47788A"
- "Lieutenant Thew Jared Lcolm (M), 22 yrs. old, army, 857779"
- "FourthOffc Ntonet Lliam Arty Jesper (F), 34 yrs. old, merchant, B74885"
- "Captain Etrius Chris Llan Eany Taurus (M), 26 yrs. old, army, 578669"
- "Captain Myong (F), 26 yrs. old, army, A87678"
- "Rrellena Anaka Rnard Alcolm Ahmet (F), 38 yrs. old, 62BB7A"
- "SecndOffc Sabet Daresan (F), 38 yrs. old, merchant, 47AAB5"]
+[["FourthOffc Rryl Ymour Taurus, Sr. (M), 34 yrs. old, merchant, 5A76C2"
+  "Brawling-1, Jack-o-T-1, Navigation-1, Admin-2, VaccSuit-1"]
+ ["FourthOffc Taisha Olson (F), 22 yrs. old, merchant, A35998"
+  "Admin-1, Navigation-1, Medical-2"]
+ ["Herr Odricky (M), 22 yrs. old, navy, B96644" "VaccSuit-1"]
+ ["Captain Sir Adley Dford, III (M), 26 yrs. old, army, 6656CB"
+  "Leader-1, GunCbt-1, Tactics-2, Brawling-1"]
+ ["Lyson Liza (F), 22 yrs. old, 458B3A" "Electronic-1"]
+ ["Sanford Ahul Jarsh Tran Nolis (M), 22 yrs. old, marines, 887988"
+  "Medical-1, Admin-1"]
+ ["Ms. Indsy Ulius (F), 22 yrs. old, marines, A68373"
+  "VaccSuit-1, GunCbt-1"]
+ ["Fr. Aticia Uyuki Arten (F), 22 yrs. old, 5AC4B6" "Gambling-1"]
+ ["FourthOffc Eopoldo Sanan (M), 26 yrs. old, merchant, 893949"
+  "Navigation-1, Jack-o-T-1, Steward-1, VaccSuit-1"]
+ ["FourthOffc Millard Alexis (M), 26 yrs. old, merchant, 8A9464"
+  "Gunnery-1, Medical-1, Brawling-1"]
+ ["Ergio (M), 22 yrs. old, navy, 987879" "BladeCbt-2"]
+ ["Ms. Leslie Orothy Piotr Hard (F), 30 yrs. old, 578673"
+  "Brawling-1, Gambling-1"]
+ ["Ms. Dath Oderick (F), 22 yrs. old, scouts, 2A8876"
+  "Mechanical-1, Electronic-1"]
+ ["FourthOffc Donita (F), 22 yrs. old, merchant, D75878"
+  "BladeCbt-1, VaccSuit-1, Electronic-1"]
+ ["FourthOffc Margarito Edro Etsy (M), 30 yrs. old, merchant, 89695A"
+  "Steward-1, Gunnery-1, Navigation-1, BladeCbt-1, Electronic-1, Medical-1"]
+ ["Sir Inton Osur Jenine Swamy Usan (M), 34 yrs. old, 547A73"
+  "Mechanical-1, Gambling-2, BladeCbt-2"]
+ ["Ernanderely Aphyllos (F), 26 yrs. old, navy, 989657"
+  "VaccSuit-1, Mechanical-1"]
+ ["Lieutenant Lfonzo Rayant, I (M), 22 yrs. old, army, 697C94"
+  "Medical-1, Admin-1, GunCbt-1, BladeCbt-1"]
+ ["Morton Endi, III (M), 22 yrs. old, navy, 783369"
+  "Jack-o-T-1, Electronic-1"]
+ ["FourthOffc Pher Ewis Aphyllos Iroze, Jr. (M), 42 yrs. old, merchant, B458A5"
+  "Admin-1, Engnrng-1, Medical-1, Brawling-1, Gunnery-1"]
+ ["Mr. Rron Einhard (M), 22 yrs. old, 668736" "Gambling-1, Forgery-1"]
+ ["Ms. Atarshala Andip Dustin Cisco Klin (F), 30 yrs. old, 489468"
+  "Bribery-1, Gambling-1, Mechanical-1"]
+ ["Sra. Ueen Erta (F), 22 yrs. old, scouts, A9C667" "Mechanical-1"]
+ ["Fermin Norma (M), 42 yrs. old, A64B67"
+  "Electronic-2, Streetwise-1, Mechanical-1"]
+ ["Lieutenant Orna Evyn (F), 22 yrs. old, army, 877997"
+  "Electronic-1, ATV-1, BladeCbt-1"]
+ ["Sir Nastaciela Anaka (F), 22 yrs. old, 65988B" "Brawling-1"]
+ ["Captain Craig (M), 26 yrs. old, army, B58689"
+  "Mechanical-1, BladeCbt-1, GunCbt-1, ATV-1, FwdObsv-1, Medical-1"]
+ ["Lieutenant Arlton Itendranatolerant (M), 22 yrs. old, marines, 525868"
+  "BladeCbt-2, GunCbt-2"]
+ ["SecndOffc Karee Dent (F), 58 yrs. old, merchant, C78A75"
+  "VaccSuit-1, Electronic-2, Medical-1, Navigation-1, Mechanical-4"]
+ ["FourthOffc Ymour (M), 26 yrs. old, merchant, 599357"
+  "Gunnery-1, Steward-1, Electronic-3"]
+ ["Cole Olai (M), 22 yrs. old, scouts, 953B33"
+  "VaccSuit-1, Jack-o-T-1"]
+ ["Lieutenant Hunter Patty (M), 22 yrs. old, army, 8586B5"
+  "Tactics-1, ATV-1, GunCbt-1"]
+ ["Dwayne Icah (M), 26 yrs. old, scouts, 558A96"
+  "Electronic-1, Jack-o-T-1"]
+ ["FourthOffc Amado Ollin Matti Assan (M), 30 yrs. old, merchant, 989877"
+  "Streetwise-1, GunCbt-1, Electronic-1, Navigation-1"]
+ ["Zell Nadeep Susumu Spudboy Torianne (F), 22 yrs. old, scouts, 729B65"
+  ""]
+ ["Arkus Arryl (M), 22 yrs. old, army, 8CC9A9" "AirRaft-1"]
+ ["Tzie Omain (F), 22 yrs. old, 638956" "GunCbt-1, Bribery-1"]
+ ["Ronnie Leste Erant, V (M), 22 yrs. old, navy, 589456" "VaccSuit-1"]
+ ["Major Hilma Icky (F), 34 yrs. old, army, 977B77"
+  "Brawling-1, AirRaft-1, Tactics-1, Mechanical-1, Gambling-1, BladeCbt-2"]]
 
 
 ;; Effects of aging... note UPP:
@@ -638,38 +511,3 @@
  :desired-service :marines,
  :gender :female,
  :attributes {:ss 4, :ed 7, :in 9, :en 0, :dx 1, :st 1}}
-
-
-;; Skills for characters:
-(->> make-character
-     (repeatedly 20)
-     (map (comp vec :skills))
-     vec)
-
-;;=>
-[["ST+1" "VaccSuit" "VaccSuit" "ST+1" "Electronic" "VaccSuit"]
- ["Mechanical" "GunCbt"]
- ["GunCbt" "ST+1"]
- ["AirRaft" "BladeCbt" "FwdObsv" "DX+1"]
- ["BladeCbt" "GunCbt"]
- ["IN+1" "Mechanical" "Jack-o-T"]
- ["GunCbt" "ST+1" "Electronic" "Brawling" "ED+1" "Mechanical" "GunCbt"]
- ["GunCbt" "Gambling"]
- ["Medical" "EN+1" "GunCbt"]
- ["ATV" "BladeCbt"]
- ["Navigation" "Jack-o-T" "Brawling"]
- ["Gambling" "Electronic" "Forgery"]
- ["BladeCbt" "DX+1"]
- ["EN+1" "Gambling"]
- ["BladeCbt"
-  "VaccSuit"
-  "EN+1"
-  "BladeCbt"
-  "GunCbt"
-  "BladeCbt"
-  "Electronic"]
- ["ST+1" "Steward" "Brawling" "Jack-o-T"]
- ["Gunnery" "Navigation"]
- ["IN+1" "GunCbt"]
- ["Brawling" "ST+1" "Bribery"]
- ["Gambling" "ATV" "EN+1" "GunCbt"]]

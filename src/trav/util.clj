@@ -11,3 +11,10 @@
    (cons x (if (or (f x) (nil? xs))
              nil
              (take-until f xs)))))
+
+
+(defn keywordize [s]
+  (-> s
+      name
+      (#(.toLowerCase %))
+      keyword))
