@@ -25,3 +25,8 @@
                                          (assoc-in [:attributes :en] 5)
                                          (assoc-in [:attributes :in] 3))
     (provided (d) => 2 :times 4)))
+
+
+(fact "make-character produces something without crashing"
+  (->> make-character
+       (repeatedly 200)) =not=> (throws))

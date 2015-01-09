@@ -620,45 +620,59 @@
 ;; Skills for characters:
 (->> make-character
      (repeatedly 20)
-     (map (juxt format-name-map :skills)))
+     (map (juxt format-name-map (comp vec :skills)))
+     vec)
 
 ;;=>
-(["Ensign Illermo Mond Madoss Revor (M), 22 yrs. old, navy, 464775"
-  ("Mechanical" "Mechanical")]
- ["Lieutenant Shia Yesh Nute Idhar Gunter (F), 26 yrs. old, marines, 898649"
-  ("Tactics" "ATV" "Mechanical")]
- ["Fr. Nefer Liyuan (F), 22 yrs. old, 793C69" ("Brawling" "Forgery")]
- ["Ms. Fana Sherman (F), 22 yrs. old, merchant, 27C879"
-  ("Mechanical" "Navigation")]
- ["FourthOffc Brendan Ndries, V (M), 22 yrs. old, merchant, 7C7787"
-  ("Gunnery" "Navigation")]
- ["Tyisha Areq Ning (F), 22 yrs. old, marines, 834868"
-  ("Tactics" "GunCbt")]
- ["Omer Orbert, V (M), 22 yrs. old, 367886"
-  ("Mechanical" "Electronic")]
- ["Ms. Lindy Jaak Nick (F), 26 yrs. old, scouts, 776784"
-  ("Electronic" "Medical" "Electronic")]
- ["Hlea Thuan (F), 22 yrs. old, scouts, AB4627"
-  ("Mechanical" "Gunnery")]
- ["Lieutenant Aina Madoss (F), 22 yrs. old, army, B98886"
-  ("Electronic" "Electronic")]
- ["Eomi Immo (F), 22 yrs. old, navy, 5B3485" ("Gunnery" "Gunnery")]
- ["Millard Elge Orien (M), 22 yrs. old, marines, B98965"
-  ("Tactics" "Tactics")]
- ["FourthOffc Sir Thanna Shaw (F), 26 yrs. old, merchant, 7786AB"
-  ("Navigation" "Gunnery" "Streetwise")]
- ["Lieutenant Cenzo (M), 22 yrs. old, army, 34769A"
-  ("GunCbt" "Mechanical")]
- ["Lance Ahsin (M), 30 yrs. old, 59863A"
-  ("Streetwise" "Streetwise" "Brawling" "Electronic")]
- ["Leopoldo Ominic, Sr. (M), 26 yrs. old, scouts, 9847A6"
-  ("Mechanical" "AirRaft" "AirRaft")]
- ["Udrie Janice Kevyn (F), 22 yrs. old, scouts, 5BBA46"
-  ("Mechanical" "Jack-o-T")]
- ["Mr. Arlon Nute Vaughn, I (M), 22 yrs. old, marines, 96A689"
-  ("GunCbt" "BladeCbt")]
- ["Erwoodrow Morris (M), 22 yrs. old, merchant, 2A7A84"
-  ("Mechanical" "Streetwise")]
- ["Mrs. Nyatta Pilar Tonio (F), 22 yrs. old, scouts, 79A663"
-  ("Mechanical" "Gunnery")])
+[["Ynthia Hienz (F), 26 yrs. old, marines, 586955"
+  ["Mechanical" "ATV" "Electronic"]]
+ ["Lema (F), 38 yrs. old, 578C9B"
+  ["Mechanical"
+   "Streetwise"
+   "Electronic"
+   "Forgery"
+   "Electronic"
+   "Brawling"]]
+ ["Cepcion Cques (F), 22 yrs. old, army, 99C885"
+  ["Mechanical" "GunCbt"]]
+ ["Lieutenant Riel Eather (M), 22 yrs. old, army, A6687A"
+  ["Electronic" "Mechanical"]]
+ ["Ms. Cathenika Erre Rahul Kenneth (F), 22 yrs. old, army, B8965A"
+  ["GunCbt" "ATV"]]
+ ["FourthOffc Eetta (F), 26 yrs. old, merchant, 98CA86"
+  ["Navigation" "Streetwise" "Mechanical"]]
+ ["Ms. Laila (F), 26 yrs. old, 5B8529"
+  ["Streetwise" "Forgery" "Streetwise"]]
+ ["SecndOffc Ncey Polly Lsky Amartin Ecky (F), 38 yrs. old, merchant, 787898"
+  ["Electronic"
+   "Electronic"
+   "Navigation"
+   "Electronic"
+   "Streetwise"
+   "Mechanical"]]
+ ["Ertude Arkus Offrey Lliot (F), 34 yrs. old, marines, 576588"
+  ["BladeCbt" "Mechanical" "GunCbt" "GunCbt" "Mechanical"]]
+ ["Lieutenant Mara Glas (F), 22 yrs. old, army, 959477"
+  ["Tactics" "Mechanical"]]
+ ["FourthOffc Jeffery Magnus (M), 34 yrs. old, merchant, 9B6625"
+  ["Streetwise" "Medical" "Medical" "Medical" "Electronic"]]
+ ["FourthOffc Rnestor Ikolai (M), 34 yrs. old, merchant, 666357"
+  ["Navigation" "Mechanical" "Streetwise" "Navigation" "Gunnery"]]
+ ["Srta. Nilda Etin (F), 26 yrs. old, scouts, 896A37"
+  ["Mechanical" "Jack-o-T" "Mechanical"]]
+ ["Ayton Eddy Icia (M), 26 yrs. old, scouts, 288445"
+  ["AirRaft" "Medical" "Medical"]]
+ ["M. Ucas Cois Ella Icah Kemal (M), 26 yrs. old, marines, A67886"
+  ["Tactics" "BladeCbt" "Mechanical"]]
+ ["FourthOffc Iuseppe Hmed Xana Debi Serdar, III (M), 26 yrs. old, merchant, C82437"
+  ["Gunnery" "Navigation" "Gunnery"]]
+ ["Emona Seph Hleen Muel (F), 22 yrs. old, 867948"
+  ["Brawling" "Electronic"]]
+ ["Milford Wson (M), 30 yrs. old, scouts, 894B6A"
+  ["Medical" "Mechanical" "Electronic" "Electronic"]]
+ ["Blair Urtney (F), 26 yrs. old, scouts, 6585A3"
+  ["Jack-o-T" "AirRaft" "Medical"]]
+ ["Colonel Temberyle Ulius Uise Elijah Ahesh (F), 38 yrs. old, army, 7479C7"
+  ["ATV" "Electronic" "Electronic" "ATV" "Mechanical" "Electronic"]]]
+
 
