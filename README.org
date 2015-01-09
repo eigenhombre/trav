@@ -7,7 +7,7 @@ more) for [[http://en.wikipedia.org/wiki/Traveller_%28role-playing_game%29#Trave
 
 * Why?
 
-- To experiment with using [[https://github.com/eigenhombre/trav/blob/master/src/trav/char.clj#L41][small DSLs]] to represent RPG rules and tables
+- To experiment with using [[https://github.com/eigenhombre/trav/blob/master/src/trav/tables.clj#L71][small DSLs]] to represent RPG rules and tables
 - To indulge an ancient fascination with
   - simulation
   - science fiction
@@ -24,11 +24,12 @@ more) for [[http://en.wikipedia.org/wiki/Traveller_%28role-playing_game%29#Trave
 - Characters
   - Name selection
   - Service determination
-  - Commissioning, promotion, reinlistment, survival, aging (incl. aging damage/death)
-  - Standard formatting, incl. UPPs
+  - Commissioning, promotion, reinlistment
+  - Survival/death, aging effects
+  - Skill awards
+  - Standard formatting, incl. UPPs and skills
 
 ** Ambitions
-- Character skill selection
 - Character benefits
 - Character equipment/possessions
 - Worlds ("Scouts"-based system generation)
