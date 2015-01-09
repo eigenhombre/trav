@@ -146,6 +146,26 @@
   IN {66 [-1 9]})
 
 
+(def-skill-table personal-development-table
+          navy   marines        army     scouts   merchant      other
+  1       ST+1       ST+1       ST+1       ST+1       ST+1       ST+1
+  2       DX+1       DX+1       DX+1       DX+1       DX+1       DX+1
+  3       EN+1       EN+1       EN+1       EN+1       EN+1       EN+1
+  4       SS+1   Gambling   Gambling     GunCbt       ST+1   BladeCbt
+  5       IN+1   Brawling   Brawling       IN+1   BladeCbt   Brawling
+  6       ED+1   BladeCbt       ED+1       ED+1   Brawling       SS-1)
+
+
+(def-skill-table service-skills-table
+          navy   marines        army     scouts   merchant      other
+  1  ShipsBoat       ATV         ATV    AirRaft    Steward    Forgery
+  2   VaccSuit  VaccSuit     AirRaft   VaccSuit   VaccSuit   Gambling
+  3    FwdObsv  BladeCbt     FwdObsv Navigation       ST+1   Brawling
+  4   BladeCbt  BladeCbt    BladeCbt Mechanical     GunCbt   BladeCbt
+  5     GunCbt    GunCbt      GunCbt Electronic Electronic     GunCbt
+  6    Gunnery    GunCbt      GunCbt   Jack-o-T   Jack-o-T    Bribery)
+
+
 (def-skill-table advanced-education-table
           navy    marines       army     scouts   merchant      other
   1   VaccSuit        ATV        ATV    AirRaft Streetwise Streetwise
@@ -155,19 +175,15 @@
   5    Gunnery   BladeCbt   BladeCbt    Gunnery    Gunnery   Brawling
   6   Jack-o-T     GunCbt     GunCbt    Medical    Medical    Forgery)
 
-;; ;;=>
-;; {:other
-;;  ["Streetwise" "Mechanical" "Electronic" "Gambling" "Brawling" "Forgery"],
-;;  :navy
-;;  ["VaccSuit" "Mechanical" "Electronic" "Engnrng" "Gunnery" "Jack-o-T"],
-;;  :scouts
-;;  ["AirRaft" "Mechanical" "Electronic" "Jack-o-T" "Gunnery" "Medical"],
-;;  :army
-;;  ["ATV" "Mechanical" "Electronic" "Tactics" "BladeCbt" "GunCbt"],
-;;  :merchant
-;;  ["Streetwise" "Mechanical" "Electronic" "Navigation" "Gunnery" "Medical"],
-;;  :marines
-;;  ["ATV" "Mechanical" "Electronic" "Tactics" "BladeCbt" "GunCbt"]}
+
+(def-skill-table advanced-education-table-2
+          navy    marines       army     scouts   merchant      other
+  1    Medical    Medical    Medical    Medical    Medical    Medical
+  2 Navigation    Tactics    Tactics Navigation Navigation    Forgery
+  3    Engnrng    Tactics    Tactics    Engnrng    Engnrng Electronic
+  4   Computer   Computer   Computer   Computer   Computer   Computer
+  5      Pilot     Leader     Leader      Pilot      Pilot Streetwise
+  6      Admin      Admin      Admin   Jack-o-T      Admin   Jack-o-T)
 
 
 ;; Character determination:
@@ -429,11 +445,18 @@
     (update-in char [:terms-reached] inc)))
 
 
-;; FIXME: add other tables:
-(defn add-skill [{:keys [actual-service] :as char}]
-  (let [skill (-> advanced-education-table actual-service rand-nth)]
-    (update-in char [:skills] conj skill)))
+(defn select-skill-table [{{ed :ed} :attributes}]
+  (->> [personal-development-table
+        service-skills-table
+        advanced-education-table
+        advanced-education-table-2]
+       (take (if (>= ed 8) 4 3))
+       rand-nth))
 
+
+(defn add-skill [{:keys [actual-service] :as char}]
+  (let [skill (-> (select-skill-table char) actual-service rand-nth)]
+    (update-in char [:skills] conj skill)))
 
 
 (defn add-skills-for-service-term [{:keys [terms-reached] :as char}]
@@ -620,59 +643,33 @@
 ;; Skills for characters:
 (->> make-character
      (repeatedly 20)
-     (map (juxt format-name-map (comp vec :skills)))
+     (map (comp vec :skills))
      vec)
 
 ;;=>
-[["Ynthia Hienz (F), 26 yrs. old, marines, 586955"
-  ["Mechanical" "ATV" "Electronic"]]
- ["Lema (F), 38 yrs. old, 578C9B"
-  ["Mechanical"
-   "Streetwise"
-   "Electronic"
-   "Forgery"
-   "Electronic"
-   "Brawling"]]
- ["Cepcion Cques (F), 22 yrs. old, army, 99C885"
-  ["Mechanical" "GunCbt"]]
- ["Lieutenant Riel Eather (M), 22 yrs. old, army, A6687A"
-  ["Electronic" "Mechanical"]]
- ["Ms. Cathenika Erre Rahul Kenneth (F), 22 yrs. old, army, B8965A"
-  ["GunCbt" "ATV"]]
- ["FourthOffc Eetta (F), 26 yrs. old, merchant, 98CA86"
-  ["Navigation" "Streetwise" "Mechanical"]]
- ["Ms. Laila (F), 26 yrs. old, 5B8529"
-  ["Streetwise" "Forgery" "Streetwise"]]
- ["SecndOffc Ncey Polly Lsky Amartin Ecky (F), 38 yrs. old, merchant, 787898"
-  ["Electronic"
-   "Electronic"
-   "Navigation"
-   "Electronic"
-   "Streetwise"
-   "Mechanical"]]
- ["Ertude Arkus Offrey Lliot (F), 34 yrs. old, marines, 576588"
-  ["BladeCbt" "Mechanical" "GunCbt" "GunCbt" "Mechanical"]]
- ["Lieutenant Mara Glas (F), 22 yrs. old, army, 959477"
-  ["Tactics" "Mechanical"]]
- ["FourthOffc Jeffery Magnus (M), 34 yrs. old, merchant, 9B6625"
-  ["Streetwise" "Medical" "Medical" "Medical" "Electronic"]]
- ["FourthOffc Rnestor Ikolai (M), 34 yrs. old, merchant, 666357"
-  ["Navigation" "Mechanical" "Streetwise" "Navigation" "Gunnery"]]
- ["Srta. Nilda Etin (F), 26 yrs. old, scouts, 896A37"
-  ["Mechanical" "Jack-o-T" "Mechanical"]]
- ["Ayton Eddy Icia (M), 26 yrs. old, scouts, 288445"
-  ["AirRaft" "Medical" "Medical"]]
- ["M. Ucas Cois Ella Icah Kemal (M), 26 yrs. old, marines, A67886"
-  ["Tactics" "BladeCbt" "Mechanical"]]
- ["FourthOffc Iuseppe Hmed Xana Debi Serdar, III (M), 26 yrs. old, merchant, C82437"
-  ["Gunnery" "Navigation" "Gunnery"]]
- ["Emona Seph Hleen Muel (F), 22 yrs. old, 867948"
-  ["Brawling" "Electronic"]]
- ["Milford Wson (M), 30 yrs. old, scouts, 894B6A"
-  ["Medical" "Mechanical" "Electronic" "Electronic"]]
- ["Blair Urtney (F), 26 yrs. old, scouts, 6585A3"
-  ["Jack-o-T" "AirRaft" "Medical"]]
- ["Colonel Temberyle Ulius Uise Elijah Ahesh (F), 38 yrs. old, army, 7479C7"
-  ["ATV" "Electronic" "Electronic" "ATV" "Mechanical" "Electronic"]]]
-
-
+[["ST+1" "VaccSuit" "VaccSuit" "ST+1" "Electronic" "VaccSuit"]
+ ["Mechanical" "GunCbt"]
+ ["GunCbt" "ST+1"]
+ ["AirRaft" "BladeCbt" "FwdObsv" "DX+1"]
+ ["BladeCbt" "GunCbt"]
+ ["IN+1" "Mechanical" "Jack-o-T"]
+ ["GunCbt" "ST+1" "Electronic" "Brawling" "ED+1" "Mechanical" "GunCbt"]
+ ["GunCbt" "Gambling"]
+ ["Medical" "EN+1" "GunCbt"]
+ ["ATV" "BladeCbt"]
+ ["Navigation" "Jack-o-T" "Brawling"]
+ ["Gambling" "Electronic" "Forgery"]
+ ["BladeCbt" "DX+1"]
+ ["EN+1" "Gambling"]
+ ["BladeCbt"
+  "VaccSuit"
+  "EN+1"
+  "BladeCbt"
+  "GunCbt"
+  "BladeCbt"
+  "Electronic"]
+ ["ST+1" "Steward" "Brawling" "Jack-o-T"]
+ ["Gunnery" "Navigation"]
+ ["IN+1" "GunCbt"]
+ ["Brawling" "ST+1" "Bribery"]
+ ["Gambling" "ATV" "EN+1" "GunCbt"]]
