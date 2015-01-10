@@ -1,6 +1,6 @@
 (defproject trav/trav "0.0.1-SNAPSHOT"
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [eigenhombre/namejen "0.1.6"]
+                 [eigenhombre/namejen "0.1.7"]
                  [midje "1.6.3"]]
   :aliases {"autotest" ["midje" ":autotest"]}
   :main trav.core

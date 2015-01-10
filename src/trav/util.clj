@@ -1,9 +1,18 @@
 (ns trav.util)
 
 
-(defn hexcode [x]
-  {:pre [(< x 16), (> x -1)]}
-  (format "%X" x))
+(def ^:private base-ord
+  (- (int (.charAt "A" 0)) 10))
+
+
+(defn hexish-code [x]
+  {:pre [(> x -1), (< x 36)]}
+  (if (< x 10)
+    (str x)
+    (->> x
+         (+ base-ord)
+         char
+         str)))
 
 
 (defn take-until [f [x & xs]]

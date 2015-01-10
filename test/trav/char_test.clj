@@ -1,7 +1,7 @@
 (ns trav.char-test
-  (:require [trav.char :refer :all]
-            [trav.dice :refer [d]]
-            [midje.sweet :refer :all]))
+  (:require [midje.sweet :refer :all]
+            [trav.char :refer :all]
+            [trav.dice :refer [d]]))
 
 
 (facts "about aging"
@@ -27,10 +27,18 @@
     (provided (d) => 2 :times 4)))
 
 
+(fact "starting-character can be run a bunch without crashing"
+  (->> starting-character
+       (repeatedly 400)
+       (map format-name-map)
+       dorun) =not=> (throws))
+
+
 (fact "make-character produces something without crashing"
   (->> make-character
-       (repeatedly 400)
-       (map format-name-map)) =not=> (throws))
+       (repeatedly 100)
+       (map format-name-map)
+       dorun) =not=> (throws))
 
 
 (facts "About rank and automatic skills"

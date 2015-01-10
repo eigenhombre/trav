@@ -1,19 +1,20 @@
 (ns trav.char
+  "
+  This is the character generation namespace.  Basically it implements
+  the rules described in the first half of Classic Traveller book 1.
+  In most cases where the player would have a choice, uniform random
+  selections are taken.
+  "
   (:require [trav.dice :refer [d]]
-            [trav.util :refer [hexcode take-until keywordize]]
+            [trav.util :refer [hexish-code take-until keywordize]]
             [trav.tables :refer :all]
             [namejen.names :refer [gen-name-data-as-map]]))
 
 
-(defn char-attr-map []
-  (zipmap attributes (take (count attributes)
-                           (repeatedly d))))
-
-
-(defn roll-with-dms-succeeds? [base-roll dms stats]
+(defn roll-with-stats-dms-succeeds? [base-roll dms stats]
   (let [applicable-dms (apply +
                               (for [{:keys [attr thresh dm]} dms
-                                      :when (>= (stats attr) thresh)]
+                                    :when (>= (stats attr) thresh)]
                                 dm))]
     (>= (+ applicable-dms (d 2)) base-roll)))
 
@@ -23,113 +24,117 @@
         service-dms (-> enlistment
                         desired-service
                         :dms)
-        success? (roll-with-dms-succeeds?
+        success? (roll-with-stats-dms-succeeds?
                   (-> enlistment desired-service :base-roll)
                   service-dms
                   stats)
         actual-service (if success? desired-service (rand-nth services))]
-    [desired-service (not success?) actual-service]))
+    {:desired-service desired-service
+     :drafted? (not success?)
+     :actual-service actual-service}))
 
 
-(defn starting-character []
+(defn char-attr-map
+  "
+  Generate random character attributes (ST, DX, etc.) using 2D each.
+  "
+  []
+  (->> d
+       repeatedly
+       (take (count attributes))
+       (zipmap attributes)))
+
+
+(defn starting-character
+  "
+  Generate starting character prior to terms of service, using
+  Namejen-provided map.  Select desired and actual service based on
+  dice throws and the 'draft.'
+  "
+  []
   (let [stats (char-attr-map)
         soc (get stats :ss)
         knighted? (= soc 11)
         baron? (= soc 12)
         royal-form (cond knighted? "Sir"
-                         baron? "Von")
-        [desired-service drafted? actual-service] (determine-service stats)]
+                         baron? "Von")]
     (merge (gen-name-data-as-map)
+           (determine-service stats)
            {:age 18
             :royal-form royal-form
             :attributes stats
-            :desired-service desired-service
-            :actual-service actual-service
-            :drafted? drafted?
             :living? true
             :commissioned? false
             :reinlisting? true
+            :credits 0
             :rank 0
             :rank-name nil})))
 
 
+;; Examples:
 (->> starting-character
      repeatedly
-     (take 4)
+     (take 3)
      vec)
 
 ;;=>
-'[{:royal-form nil,
-   :reinlisting? true,
-   :actual-service :scouts,
-   :generation nil,
-   :age 18,
-   :commissioned? false,
-   :living? true,
-   :rank 0,
-   :first-name "Nthony",
-   :surnames ("Rnest"),
-   :prefix nil,
-   :drafted? false,
-   :rank-name nil,
-   :desired-service :scouts,
-   :gender :male,
-   :attributes {:ss 6, :ed 8, :in 8, :en 10, :dx 5, :st 3}}
-  {:royal-form nil,
-   :reinlisting? true,
-   :actual-service :other,
-   :generation nil,
-   :age 18,
-   :commissioned? false,
-   :living? true,
-   :rank 0,
-   :first-name "Atoshiko",
-   :surnames ("Anislaw" "Ndro"),
-   :prefix nil,
-   :drafted? false,
-   :rank-name nil,
-   :desired-service :other,
-   :gender :female,
-   :attributes {:ss 4, :ed 11, :in 8, :en 9, :dx 11, :st 4}}
-  {:royal-form nil,
-   :reinlisting? true,
-   :actual-service :other,
-   :generation nil,
-   :age 18,
-   :commissioned? false,
-   :living? true,
-   :rank 0,
-   :first-name "Lendolynn",
-   :surnames (),
-   :prefix nil,
-   :drafted? false,
-   :rank-name nil,
-   :desired-service :other,
-   :gender :female,
-   :attributes {:ss 8, :ed 6, :in 7, :en 7, :dx 4, :st 12}}
-  {:royal-form "Von",
-   :reinlisting? true,
-   :actual-service :other,
-   :generation nil,
-   :age 18,
-   :commissioned? false,
-   :living? true,
-   :rank 0,
-   :first-name "Tancenza",
-   :surnames ("Anavendran" "Nadeem"),
-   :prefix nil,
-   :drafted? true,
-   :rank-name nil,
-   :desired-service :merchant,
-   :gender :female,
-   :attributes {:ss 12, :ed 8, :in 5, :en 2, :dx 6, :st 7}}]
+[{:royal-form nil,
+  :reinlisting? true,
+  :actual-service :marines,
+  :generation nil,
+  :age 18,
+  :commissioned? false,
+  :living? true,
+  :rank 0,
+  :first-name "Lucindy",
+  :surnames ["Llary" "Socorris"],
+  :prefix "Ms.",
+  :drafted? false,
+  :rank-name nil,
+  :desired-service :marines,
+  :gender :female,
+  :attributes {:ss 7, :ed 11, :in 8, :en 6, :dx 7, :st 6}}
+ {:royal-form nil,
+  :reinlisting? true,
+  :actual-service :navy,
+  :generation nil,
+  :age 18,
+  :commissioned? false,
+  :living? true,
+  :rank 0,
+  :first-name "Kasey",
+  :surnames ["Celias" "Vishall"],
+  :prefix nil,
+  :drafted? false,
+  :rank-name nil,
+  :desired-service :navy,
+  :gender :female,
+  :attributes {:ss 9, :ed 9, :in 8, :en 8, :dx 4, :st 4}}
+ {:royal-form "Von",
+  :reinlisting? true,
+  :actual-service :other,
+  :generation nil,
+  :age 18,
+  :commissioned? false,
+  :living? true,
+  :rank 0,
+  :first-name "Estrell",
+  :surnames ["Raphael" "Lhelm"],
+  :prefix "Ms.",
+  :drafted? true,
+  :rank-name nil,
+  :desired-service :navy,
+  :gender :female,
+  :attributes {:ss 12, :ed 4, :in 6, :en 7, :dx 5, :st 7}}]
+
+
 
 
 (defn upp [char]
   (->> char
        :attributes
        (#(map % attributes))
-       (map hexcode)
+       (map hexish-code)
        (apply str)))
 
 
@@ -148,17 +153,7 @@
         {:keys [base-roll dms]} (->> char
                                      :actual-service
                                      (#(table %)))]
-    (roll-with-dms-succeeds? base-roll dms stats)))
-
-
-;; Terms of service
-(defn select-skill-table [{{ed :ed} :attributes}]
-  (->> [personal-development-table
-        service-skills-table
-        advanced-education-table
-        advanced-education-table-2]
-       (take (if (>= ed 8) 4 3))
-       rand-nth))
+    (roll-with-stats-dms-succeeds? base-roll dms stats)))
 
 
 (defn attribute-change
@@ -183,6 +178,15 @@
   (if-let [{attr :attr, delta :delta} (attribute-change skill)]
     (update-in char [:attributes attr] + delta)
     (update-in char [:skills (specialize skill)] (fnil inc 0))))
+
+
+(defn select-skill-table [{{ed :ed} :attributes}]
+  (->> [personal-development-table
+        service-skills-table
+        advanced-education-table
+        advanced-education-table-2]
+       (take (if (>= ed 8) 4 3))
+       rand-nth))
 
 
 (defn add-skill [{:keys [actual-service living?] :as char}]
@@ -265,12 +269,6 @@
                add-skill
                maybe-increase-rank)
            char)))
-
-
-(defn age [char]
-  (if-not (:living? char)
-    char
-    (update-in char [:age] + 4)))
 
 
 (defn maybe-kill [char]
@@ -362,14 +360,21 @@
   [{rank :rank
     terms :terms-reached
     alive :living?
+    service :actual-service
     {gambling 'Gambling} :skills
     :as char}]
   (if-not alive
     char
     (let [rolls (cond (= rank 0) terms
                       (< rank 3) (inc terms)
-                      :else (+ 2 terms))]
-      ;; (println 'musterout rank terms rolls gambling) <--- YAH
+                      :else (+ 2 terms))
+          cash-rolls (->> rolls
+                          inc
+                          rand-int
+                          (min 3))
+          cash-lookup-fn #(if gambling (d 1) (dec (d 1)))
+          cash-fn #(-> cash-allowances service (nth (cash-lookup-fn)))
+          cash (apply + (repeatedly cash-rolls cash-fn))]
       char)))
 
 
