@@ -42,22 +42,23 @@
 
 
 (facts "About rank and automatic skills"
-  (-> (starting-character)
-      (assoc :actual-service :army)
-      (assoc :skills {})
-      (assoc :rank-name "Lieutenant")
-      add-automatic-skills-for-rank
-      :skills) => {'SMG 1}
-  (-> (starting-character)
-      (assoc :actual-service :merchant)
-      (assoc :skills {})
-      (assoc :rank-name "FirstOffc")
-      add-automatic-skills-for-rank
-      :skills) => {'Pilot 1}
-  (-> (starting-character)
-      (assoc-in [:attributes :ss] 11)
-      (assoc :actual-service :navy)
-      (assoc :rank-name "Captain")
-      add-automatic-skills-for-rank
-      :attributes
-      :ss) => 12)
+  (let [char-fn (fn [svc rank]
+                  (-> (starting-character)
+                      (assoc :actual-service svc)
+                      (assoc :skills {})
+                      (assoc :rank-name rank)))]
+    (-> :army
+        (char-fn "Lieutenant")
+        add-automatic-skills-for-rank
+        :skills) => {'SMG 1}
+
+    (-> :merchant
+        (char-fn "FirstOffc")
+        add-automatic-skills-for-rank
+        :skills) => {'Pilot 1}
+
+    (-> (char-fn :navy "Captain")
+        (assoc-in [:attributes :ss] 11)
+        add-automatic-skills-for-rank
+        :attributes
+        :ss) => 12))
