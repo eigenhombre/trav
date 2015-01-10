@@ -29,12 +29,15 @@ more) for [[http://en.wikipedia.org/wiki/Traveller_%28role-playing_game%29#Trave
   - Skill awards
   - Standard formatting, incl. UPPs and skills
 
-** Ambitions
-- Character benefits
-- Character equipment/possessions
+** To Do
+*** Generation
+- Character mustering out/benefits/retirement
 - Worlds ("Scouts"-based system generation)
-- Encounters
 - Starships
+*** Simulation ideas
+- Character equipment/possessions
+- Narrated character histories
+- Encounters
 - Interplanetary and interstellar travel
 - Character and ship combat
 - ...

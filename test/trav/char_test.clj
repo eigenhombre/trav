@@ -29,4 +29,27 @@
 
 (fact "make-character produces something without crashing"
   (->> make-character
-       (repeatedly 200)) =not=> (throws))
+       (repeatedly 400)
+       (map format-name-map)) =not=> (throws))
+
+
+(facts "About rank and automatic skills"
+  (-> (starting-character)
+      (assoc :actual-service :army)
+      (assoc :skills {})
+      (assoc :rank-name "Lieutenant")
+      add-automatic-skills-for-rank
+      :skills) => {'SMG 1}
+  (-> (starting-character)
+      (assoc :actual-service :merchant)
+      (assoc :skills {})
+      (assoc :rank-name "FirstOffc")
+      add-automatic-skills-for-rank
+      :skills) => {'Pilot 1}
+  (-> (starting-character)
+      (assoc-in [:attributes :ss] 11)
+      (assoc :actual-service :navy)
+      (assoc :rank-name "Captain")
+      add-automatic-skills-for-rank
+      :attributes
+      :ss) => 12)

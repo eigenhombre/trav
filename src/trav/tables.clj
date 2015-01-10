@@ -26,8 +26,11 @@
        ~tname))
 
 
+(defn nil-if-dash [symb] (if (= symb '-) nil symb))
+
+
 (defn selection-row-vec [[svc & elts]]
-  [(keyword svc) (map #(if (= % '-) nil %) elts)])
+  [(keyword svc) (map nil-if-dash elts)])
 
 
 (defmacro def-selection-table [tname & rows]
@@ -49,12 +52,13 @@
        ~tname))
 
 
-(defmacro def-skill-table [tname & data]
+(defmacro def-rnd-selection-table [tname & data]
   `(do
      (def ~tname
        (let [svcs# (map keywordize (take 6 '~data))
              rows# (->> '~data
                         (drop 6)
+                        (map nil-if-dash)
                         (partition 7)
                         (map (comp (partial map vector) rest)))]
          (->> rows#
@@ -135,7 +139,7 @@
   IN {66 [-1 9]})
 
 
-(def-skill-table personal-development-table
+(def-rnd-selection-table personal-development-table
           navy   marines        army     scouts   merchant      other
   1       ST+1       ST+1       ST+1       ST+1       ST+1       ST+1
   2       DX+1       DX+1       DX+1       DX+1       DX+1       DX+1
@@ -145,7 +149,7 @@
   6       ED+1   BladeCbt       ED+1       ED+1   Brawling       SS-1)
 
 
-(def-skill-table service-skills-table
+(def-rnd-selection-table service-skills-table
           navy   marines        army     scouts   merchant      other
   1  ShipsBoat       ATV         ATV    AirRaft    Steward    Forgery
   2   VaccSuit  VaccSuit     AirRaft   VaccSuit   VaccSuit   Gambling
@@ -155,7 +159,7 @@
   6    Gunnery    GunCbt      GunCbt   Jack-o-T   Jack-o-T    Bribery)
 
 
-(def-skill-table advanced-education-table
+(def-rnd-selection-table advanced-education-table
           navy    marines       army     scouts   merchant      other
   1   VaccSuit        ATV        ATV    AirRaft Streetwise Streetwise
   2 Mechanical Mechanical Mechanical Mechanical Mechanical Mechanical
@@ -165,7 +169,7 @@
   6   Jack-o-T     GunCbt     GunCbt    Medical    Medical    Forgery)
 
 
-(def-skill-table advanced-education-table-2
+(def-rnd-selection-table advanced-education-table-2
           navy    marines       army     scouts   merchant      other
   1    Medical    Medical    Medical    Medical    Medical    Medical
   2 Navigation    Tactics    Tactics Navigation Navigation    Forgery
@@ -173,3 +177,34 @@
   4   Computer   Computer   Computer   Computer   Computer   Computer
   5      Pilot     Leader     Leader      Pilot      Pilot Streetwise
   6      Admin      Admin      Admin   Jack-o-T      Admin   Jack-o-T)
+
+
+(def blades '(Dagger Blade Foil Cutlass Sword Broadsword
+              Spear Halberd Pike Cudgel Bayonet))
+
+
+(def guns '(BodyPistol AutomaticPistol Revolver Carbine Rifle
+            LaserCarbine LaserRifle AutomaticRifle SMG Shotgun))
+
+
+;; Mustering out / benefits tables
+(def-rnd-selection-table material-benefits
+          navy    marines       army     scouts   merchant      other
+  1     LowPsg     LowPsg     LowPsg     LowPsg     LowPsg     LowPsg
+  2       IN+1       IN+2       IN+1       IN+2       IN+1       IN+1
+  3       ED+2       ED+1       ED+2       ED+2       ED+1       ED+1
+  4      Blade      Blade        Gun      Blade        Gun        Gun
+  5 Travellers Travellers    HighPsg        Gun      Blade    HighPsg
+  6    HighPsg    HighPsg     MidPsg      Scout     LowPsg          -
+  7       SS+2       SS+2       SS+1          -   Merchant          -)
+
+
+(def-rnd-selection-table cash-allowances
+          navy    marines       army     scouts   merchant      other
+  1       1000       2000       2000      20000       1000       1000
+  2       5000       5000       5000      20000       5000       5000
+  3       5000       5000      10000      30000      10000      10000
+  4      10000      10000      10000      30000      20000      10000
+  5      20000      20000      10000      50000      20000      10000
+  6      50000      30000      20000      50000      40000      50000
+  7      50000      40000      30000      50000      40000     100000)
