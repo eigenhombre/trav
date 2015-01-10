@@ -1,11 +1,20 @@
 (ns trav.core
   (:gen-class)
-  (:require [trav.char :refer [make-character format-name-map skills-str]]))
+  (:require [trav.char :refer [make-living-character
+                               format-name-map
+                               format-skills
+                               format-swag]]))
 
 
 (defn -main [& [nstr & _]]
   (let [n (if nstr (Integer/parseInt nstr) 50)]
-    (doseq [char (repeatedly 10 make-character)]
-      (println (format-name-map char))
-      (println (skills-str char))
-      (println))))
+    (doseq [char (repeatedly n make-living-character)]
+      (->> [(format-name-map char)
+            (format-skills char)
+            (format-swag char)]
+       (remove empty?)
+       (interpose "\n")
+       (concat ["\n"])
+       (apply str)
+       println))))
+

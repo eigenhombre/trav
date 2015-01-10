@@ -67,7 +67,9 @@
             :commissioned? false
             :reinlisting? true
             :credits 0
+            :possessions []
             :rank 0
+            :memberships #{}
             :rank-name nil})))
 
 
@@ -138,7 +140,7 @@
        (apply str)))
 
 
-(defn skills-str [{skills :skills}]
+(defn format-skills [{skills :skills}]
   (->> skills
        (map (fn [[a b]] (format "%s-%s" a b)))
        (interpose ", ")
@@ -350,6 +352,26 @@
       age-one-term))
 
 
+(defn- specify-blade [char possession]
+  (if (= possession 'Blade)
+    (let [skills (keys (:skills char))
+          match (some (set skills) blades)]
+      (if match
+        match
+        (rand-nth blades)))
+    possession))
+
+
+(defn- specify-gun [char possession]
+  (if (= possession 'Gun)
+    (let [skills (keys (:skills char))
+          match (some (set skills) guns)]
+      (if match
+        match
+        (rand-nth guns)))
+    possession))
+
+
 (defn muster-out
   "
   One benefit roll per term; one more if rank 1-2; two more if rank >
@@ -374,8 +396,30 @@
                           (min 3))
           cash-lookup-fn #(if gambling (d 1) (dec (d 1)))
           cash-fn #(-> cash-allowances service (nth (cash-lookup-fn)))
-          cash (apply + (repeatedly cash-rolls cash-fn))]
-      char)))
+          cash (apply + (repeatedly cash-rolls cash-fn))
+
+          benefit-fn (fn []
+                       ;; Simulate choice of +1 DM for high-rank by increasing
+                       ;; range of throws:
+                       (let [throw-range (if (> rank 4) 7 6)
+                             idx (rand-int throw-range)]
+                         (-> material-benefits
+                             service
+                             (nth idx))))
+          noncash-rolls (- rolls cash-rolls)
+          benefits (remove nil? (repeatedly noncash-rolls benefit-fn))
+          travellers (some #{'Travellers} benefits)
+          possessions (->> benefits
+                           (remove attribute-change)
+                           (remove #{'Travellers})
+                           (map (partial specify-blade char))
+                           (map (partial specify-gun char)))
+          skills (filter attribute-change benefits)
+          improved-char (reduce add-actual-skill char skills)]
+      (-> improved-char
+          (update-in [:credits] + cash)
+          (#(if travellers (update-in % [:memberships] conj 'Travellers) %))
+          (update-in [:possessions] concat possessions)))))
 
 
 (defn make-character []
@@ -386,6 +430,24 @@
                                (not (:living? m)))))
        last
        muster-out))
+
+
+(defn make-living-character []
+  (->> make-character
+       (repeatedly)
+       (remove (complement :living?))  ;; Allow survivors only!
+       first))
+
+
+(defn format-swag [{:keys [possessions
+                           memberships
+                           credits]}]
+  (let [fmt-seq #(->> %
+                      (interpose ", ")
+                      (apply str))]
+    (fmt-seq (concat (sort possessions)
+                     memberships
+                     [(format "%d CR" credits)]))))
 
 
 ;; Adapted from eigenhombre/namejen:
@@ -439,115 +501,187 @@
 
 
 ;; Example - full characters with name, rank, age and UPP:
-(->> make-character
+(->> make-living-character
      (repeatedly 50)
-     (remove (complement :living?))  ;; Allow survivors only!
      (sort-by :name)
-     (map (juxt format-name-map skills-str))
+     (map (juxt format-name-map format-skills format-swag))
      vec)
-
 
 ;;=>
-[["Rueben Kolai Lner (M), 42 yrs. old, scouts, 9B8944"
-  "Jack-o-T-1, Mechanical-1, AirRaft-1, Medical-2, Pilot-1"]
- ["Miss Ante Rotoshi Irofumi Ille Elric (F), 34 yrs. old, 9C55A6"
-  "Forgery-1, Bayonet-1, Broadsword-1, Medical-1"]
- ["FourthOffc Sir Rardo Aoto, I (M), 30 yrs. old, merchant, 5A696B"
-  "Electronic-1, Streetwise-1, Pike-1"]
- ["Hantana Colm (F), 22 yrs. old, navy, 979577" "AutomaticPistol-1"]
- ["Sir Danela Heal Ariou Inda Varda (F), 26 yrs. old, marines, 688B8B"
-  "Brawling-2, Tactics-1, Cutlass-1"]
- ["Lympia Tapwant Rodger Aura, 26 yrs. old, 676668"
-  "Gambling-1, Brawling-1, LaserCarbine-1"]
- ["FourthOffc Selleena Panacea Ender Nivas Vilhelm (F), 22 yrs. old,
-   merchant, 7C7658"
-  "Brawling-1, Medical-1, Electronic-1"]
- ["Ms. Keilah Amin (F), 26 yrs. old, navy, 997675"
-  "Broadsword-1, Mechanical-1, VaccSuit-1"]
- ["Vito Ewis Artin, III (M), 26 yrs. old, scouts, 597984"
-  "Navigation-1, Medical-1, Pilot-1"]
- ["FourthOffc Ernon Samuel (M), 26 yrs. old, merchant, 434887"
-  "Computer-1, Electronic-1, Medical-1"]
- ["Carmine Rtney (M), 26 yrs. old, 62D346" "Bribery-1, LaserCarbine-1"]
- ["Rard An-chris Very (M), 22 yrs. old, 4B5478"
-  "Gambling-1, Halberd-1"]
- ["Srta. Linda Tair (F), 26 yrs. old, 8746A5"
-  "Broadsword-1, Brawling-1, Forgery-1"]
- ["Nnemarylyn Rilyn Dewey (F), 22 yrs. old, 967965" "Brawling-1"]
- ["Lieutenant Danilo Mour Bonnie (M), 22 yrs. old, army, D78968"
-  "SMG-1, Sword-1, Rifle-2"]
- ["Rcos Iton (M), 34 yrs. old, 6A7499"
-  "Electronic-1, Forgery-1, Brawling-1, Bribery-2"]
- ["Mr. Von Toine Suwandip Dward Hnnie Lcolm, Jr. (M), 26 yrs. old, 74866C"
-  "Electronic-1, Rifle-1, Brawling-1"]
- ["Ms. Erry Belindsay Ucky Anjay Bbie (F), 22 yrs. old, marines, 87A245"
-  "SMG-1, Cutlass-1"]
- ["Sir Ncee Laura (F), 30 yrs. old, 6B8C6B" "Brawling-3"]
- ["Mr. Von Ctor Orvillermo Aola, I (M), 22 yrs. old, 33736B"
-  "Brawling-1"]
- ["Ms. Phylissia Rdar (F), 26 yrs. old, 58A9A8"
-  "Gambling-1, Jack-o-T-1, Brawling-1"]
- ["Mr. Elson Ztof (M), 22 yrs. old, 698724" "Brawling-1"]
- ["Edwin Hawn Nora (M), 22 yrs. old, merchant, 29CA78"
-  "Mechanical-1, Electronic-1"]
- ["FourthOffc Itlyn (F), 26 yrs. old, merchant, A238CC"
-  "Cutlass-1, Admin-1"]
- ["Ms. Asilia Anielle (F), 22 yrs. old, marines, 487858"
-  "LaserCarbine-1, ATV-1, Cutlass-1"]
- ["Rrance Barry (M), 42 yrs. old, scouts, 579877"
-  "Gunnery-2, AirRaft-1, Medical-2, Pilot-1"]
- ["FourthOffc Lnora (F), 42 yrs. old, merchant, AAD577"
-  "Sword-1, Broadsword-1, Mechanical-1, VaccSuit-1, Brawling-1"]
- ["Fr. Ikaela Ovan (F), 22 yrs. old, scouts, 3B88A5"
-  "AirRaft-1, Pilot-1"]
- ["Captain Marling Hatter, V (M), 30 yrs. old, army, B25786"
-  "AirRaft-1, Gambling-1, SMG-1, ATV-1, Mechanical-1, Rifle-1"]
- ["Maxima Nkar Jarving Iping Arten (F), 26 yrs. old, 35997A"
-  "Halberd-1, Blade-1, Electronic-1"]
- ["FourthOffc Trinidad Mandal, Jr. (M), 22 yrs. old, merchant, 4866B3"
-  "Brawling-1, Medical-1, Blade-1, Pilot-1"]
- ["Ndolynella Kristen (F), 22 yrs. old, navy, A95958" "Electronic-1"]
- ["Usty Ndie (M), 22 yrs. old, merchant, 76C3A8" "Medical-1"]
- ["FourthOffc Vora Artmann (F), 30 yrs. old, merchant, 7B6766"
-  "Jack-o-T-1, Electronic-1, Streetwise-1"]
- ["FourthOffc Ayden Gideon Floyd Ladislaw Harryl, Jr. (M), 22 yrs. old,
-   merchant, B928A2"
-  "Jack-o-T-1, Medical-2, Pilot-1"]
- ["Lieutenant Janie Rine Tair (F), 26 yrs. old, army, 778742"
-  "Mechanical-1, AutomaticPistol-1, SMG-1, ATV-1, Rifle-1"]
- ["FourthOffc Espina (F), 34 yrs. old, merchant, 5B1927"
-  "Gunnery-1, Mechanical-1, Steward-1, Navigation-1, Electronic-3"]]
+[["Rgeannemaryrosendall Heatherine Erat (F), 26 yrs. old, 6899A8"
+  "Forgery-1, Cudgel-1, AutomaticPistol-1"
+  "LowPsg, 10000 CR"]
+ ["Euben Orvillermo (M), 30 yrs. old, 78DB96"
+  "Spear-1, Forgery-1, Gambling-1"
+  "70000 CR"]
+ ["Leonel Takeuchi Areq Samuel (M), 22 yrs. old, scouts, 876256"
+  "Mechanical-1, Pilot-1"
+  "20000 CR"]
+ ["Chitley Dboy (F), 30 yrs. old, 297692"
+  "Bribery-1, Electronic-2, Streetwise-1"
+  "30000 CR"]
+ ["Bess (F), 22 yrs. old, army, 795495"
+  "Carbine-1, Electronic-1, Rifle-1"
+  "5000 CR"]
+ ["LtColonel Eron Ernie Liff (M), 38 yrs. old, army, A55AF6"
+  "AirRaft-1, Bayonet-1, Gambling-2, Mechanical-1, AutomaticPistol-1, FwdObsv-1,
+   Rifle-1, Broadsword-1, ATV-1, SMG-1"
+  "AutomaticPistol, LowPsg, 45000 CR"]
+ ["Danyel Erly (F), 26 yrs. old, 64A674"
+  "Brawling-1, Gambling-1"
+  "LaserCarbine, 0 CR"]
+ ["Ympia Ford Anuel (F), 22 yrs. old, navy, 38B79A"
+  "FwdObsv-1"
+  "Spear, 0 CR"]
+ ["FourthOffc Irio Rtmann (M), 30 yrs. old, merchant, A557A6"
+  "Pilot-1, Navigation-2, Medical-2, Admin-1"
+  "LowPsg, LowPsg, Pike, 0 CR"]
+ ["Dmund Oria Ckye Ncan (M), 22 yrs. old, 65B982"
+  "Forgery-1, Brawling-1"
+  "10000 CR"]
+ ["Lieutenant Fugio Gela Udge (M), 26 yrs. old, marines, 77B644"
+  "SMG-1, Revolver-1, AutomaticRifle-2, ATV-1, Gambling-1, Cutlass-1"
+  "65000 CR"]
+ ["FourthOffc Nklyn Aron Yvonne Rafael (M), 26 yrs. old, merchant, D5B746"
+  "Electronic-1, Medical-2"
+  "Cudgel, Cutlass, LowPsg, 0 CR"]
+ ["Mr. Filibert Njeri (M), 22 yrs. old, navy, 767947"
+  "Electronic-1"
+  "1000 CR"]
+ ["Chiquita Joyce (F), 22 yrs. old, army, 683779"
+  "AutomaticRifle-1, ATV-1, Rifle-1"
+  "2000 CR"]
+ ["Lieutenant Vickey Torianto (F), 22 yrs. old, army, 99A288"
+  "Leader-1, SMG-1, FwdObsv-1, AutomaticRifle-1, Rifle-1"
+  "12000 CR"]
+ ["FourthOffc Rubin Achim, V (M), 34 yrs. old, merchant, 546B76"
+  "Cudgel-1, BodyPistol-1, Medical-1, Mechanical-1, Navigation-1"
+  "Cudgel, 40000 CR"]
+ ["Lieutenant Radley Exis, Jr. (M), 34 yrs. old, navy, AA5868"
+  "LaserCarbine-1, VaccSuit-1, Electronic-1, Blade-1, FwdObsv-2"
+  "LowPsg, Travellers, 5000 CR"]
+ ["FourthOffc Rmelo Onstantin Ranathan Udith Iellen (M), 22 yrs. old, merchant,
+   84C587"
+  "Engnrng-1, Streetwise-1, Navigation-1, Bayonet-1"
+  "30000 CR"]
+ ["Orvillermo Nter (M), 34 yrs. old, marines, 3A6C69"
+  "ATV-2, Blade-1, Tactics-1, Cutlass-1"
+  "HighPsg, 25000 CR"]
+ ["Pandon (F), 26 yrs. old, 86BA78" "Brawling-1, Forgery-1" "10000 CR"]
+ ["Lieutenant Arcus (M), 22 yrs. old, army, 873AC6"
+  "LaserRifle-2, SMG-2, Rifle-1"
+  "20000 CR"]
+ ["ThirdOffc Ylin Pradek (F), 38 yrs. old, merchant, A668C7"
+  "Electronic-1, SMG-1, Steward-1, Mechanical-1, Engnrng-1"
+  "LowPsg, LowPsg, SMG, 60000 CR"]
+ ["Sario Lerant, Jr. (M), 26 yrs. old, marines, 63B6A9"
+  "Computer-1, Tactics-2, Cutlass-1"
+  "Cutlass, 0 CR"]
+ ["FourthOffc Sir Ichie Artyn Tofer Gene Nigel (M), 22 yrs. old, merchant,
+   A37B6B"
+  "Jack-o-T-1, BodyPistol-1, Navigation-2"
+  "50000 CR"]
+ ["FourthOffc Ayle Spass Tyler Arda Iles, V (M), 22 yrs. old, merchant, 5BB756"
+  "Mechanical-2, AutomaticRifle-1"
+  "LowPsg, 20000 CR"]
+ ["Ensign Colasandee Oklis (F), 38 yrs. old, navy, 2A87B8"
+  "ShipsBoat-1, Broadsword-1, Pilot-1, FwdObsv-1, Jack-o-T-2, Admin-1"
+  "Broadsword, HighPsg, 11000 CR"]
+ ["FourthOffc Agueda Rabin Layton Xana Travi (F), 26 yrs. old, merchant, C88975"
+  "BodyPistol-1, VaccSuit-1, Medical-1, Electronic-1"
+  "BodyPistol, LowPsg, 5000 CR"]
+ ["Mr. Monita Rleen Alter, 22 yrs. old, navy, 776847" "Spear-1" "0 CR"]
+ ["Parker (M), 26 yrs. old, 675B48"
+  "Cutlass-1, Brawling-1"
+  "AutomaticRifle, Revolver, 0 CR"]
+ ["Edgar (M), 22 yrs. old, 758963"
+  "Streetwise-1, Forgery-1"
+  "HighPsg, 0 CR"]
+ ["Uline Rendranath Hsin Arie Belinder (F), 22 yrs. old, merchant, 595969"
+  "Gunnery-1, Dagger-1"
+  "Dagger, 0 CR"]
+ ["FourthOffc Daryl (M), 26 yrs. old, merchant, 873693"
+  "Medical-1, Electronic-1, Brawling-1"
+  "Cudgel, LowPsg, 1000 CR"]
+ ["Lieutenant Joslyn Leigh Scal Nkar Srael (F), 34 yrs. old, navy, 73689A"
+  "Gunnery-1, SMG-1, Spear-1, FwdObsv-1"
+  "LowPsg, Spear, Spear, Spear, 0 CR"]
+ ["Mr. Lyle Dith (M), 22 yrs. old, marines, 5A9757"
+  "Tactics-1, Foil-1, Cutlass-1"
+  "0 CR"]
+ ["FourthOffc Ulandorathyrn Icki (F), 26 yrs. old, merchant, 7B76A7"
+  "Medical-1, Computer-1, Engnrng-1, Gunnery-1"
+  "35000 CR"]
+ ["Ensign Ashine Seenu (F), 26 yrs. old, navy, 598C85"
+  "Engnrng-1, FwdObsv-1"
+  "HighPsg, LowPsg, 20000 CR"]
+ ["Lieutenant Sir Nolan Tinos Uashi Orey Vladim, I (M), 26 yrs. old, army,
+   48572B"
+  "Brawling-1, SMG-1, Mechanical-1, LaserRifle-1, Rifle-1"
+  "30000 CR"]
+ ["Lieutenant Von Svaldo Ratapwant Merat Udia (M), 26 yrs. old, navy, 9A776D"
+  "Shotgun-1, Electronic-2"
+  "HighPsg, HighPsg, 0 CR"]
+ ["Mr. Ssac Land Ienz Sangho Marek, Jr. (M), 22 yrs. old, AA6364"
+  "Brawling-1, Gambling-1"
+  "100000 CR"]
+ ["Udith Rgei (F), 26 yrs. old, 798A79"
+  "Gambling-1, Brawling-1"
+  "LowPsg, 50000 CR"]
+ ["Ensign Daryl Lias, I (M), 26 yrs. old, navy, 7BB7B4"
+  "Admin-1"
+  "70000 CR"]
+ ["FourthOffc Astasia Morrito (F), 26 yrs. old, merchant, 8558B3"
+  "Admin-1, Sword-1, Steward-1, Gunnery-1"
+  "LowPsg, 20000 CR"]
+ ["Lieutenant Iseo Ssan (M), 22 yrs. old, army, 997BC7"
+  "AutomaticPistol-1, SMG-1, Leader-1, Mechanical-1, Rifle-1"
+  "30000 CR"]
+ ["SecndOffc Erard (M), 34 yrs. old, merchant, 748934"
+  "Electronic-1, Mechanical-1, Medical-1, Shotgun-1, VaccSuit-1, Jack-o-T-1,
+   LaserRifle-1"
+  "LaserRifle, LowPsg, LowPsg, 45000 CR"]
+ ["Ance (M), 22 yrs. old, 366B94" "Pike-1" "0 CR"]
+ ["Claren Chim Itty Mund Thryn (M), 34 yrs. old, scouts, 38A5BA"
+  "Electronic-1, Gunnery-1, VaccSuit-2, Pilot-1"
+  "70000 CR"]
+ ["Sir Minnie Aiid Jerome (F), 22 yrs. old, marines, 7A3A7B"
+  "Brawling-1, Mechanical-1, Cutlass-1"
+  "20000 CR"]
+ ["Rdie Want Ping Sylvan Imawan (F), 22 yrs. old, army, 43AB78"
+  "Brawling-1, Gambling-1, Rifle-1"
+  "30000 CR"]
+ ["Lieutenant Maal Usannette (M), 22 yrs. old, army, 275AB8"
+  "SMG-1, Mechanical-1, Electronic-1, Rifle-2"
+  "0 CR"]
+ ["Lieutenant Ugustino Hony (M), 26 yrs. old, marines, 345B83"
+  "Revolver-1, Gambling-1, Admin-1, Computer-1, Tactics-2, Cutlass-1"
+  "Cutlass, 0 CR"]]
 
 
-
-(->> make-character
-     (repeatedly 5000)
-     (remove (complement :living?))  ;; Allow survivors only!
-     (filter #(= (:actual-service %) :army))
-     (filter #(= (:rank-name %) "Lieutenant"))
-     (take 10)
-     (map (juxt format-name-map skills-str))
-     vec)
-
-;;=>  As according to the "Rank and Service Skills" table, they all have SMG:
-[["Lieutenant Ximo Oseph Cynthias Vijay, III (M), 22 yrs. old, army, 3A63A5"
-  "Medical-1, SMG-1, Mechanical-1, BladeCbt-1, Rifle-1"]
- ["Lieutenant Miesha Rtney Iane Wson (F), 26 yrs. old, army, A766A2"
-  "Gambling-1, Medical-1, SMG-1, Tactics-1, Admin-1, Leader-1, Rifle-1"]
- ["Lieutenant Llettina Lenn (F), 22 yrs. old, army, 58A8CA"
-  "SMG-1, Tactics-1, Mechanical-1, Admin-1, Rifle-1"]
- ["Lieutenant Armida Aoto Boyce Hadow (F), 34 yrs. old, army, 598B7A"
-  "Brawling-1, Mechanical-2, SMG-1, Electronic-1, Tactics-1, BladeCbt-1,
-   Rifle-1"]
- ["Lieutenant Ique Hellen Ijah (F), 22 yrs. old, army, 4A77A4"
-  "GunCbt-1, SMG-1, BladeCbt-3, Rifle-1"]
- ["Lieutenant Kinley Jordan (M), 22 yrs. old, army, 8A777A"
-  "BladeCbt-1, SMG-1, GunCbt-1, Rifle-1"]
- ["Lieutenant Hyun Briggs Uashi (F), 22 yrs. old, army, 997744"
-  "SMG-1, BladeCbt-1, Gambling-2, Rifle-1"]
- ["Lieutenant Raymundo Kathrin, Sr. (M), 22 yrs. old, army, AC69BA"
-  "Brawling-1, SMG-1, BladeCbt-1, Rifle-1"]
- ["Lieutenant Von Acey Lila (M), 26 yrs. old, army, 39789C"
-  "GunCbt-2, SMG-1, Medical-1, Leader-2, Rifle-1"]
- ["Lieutenant Brooks Armi (M), 22 yrs. old, army, 8A9A63"
-  "SMG-1, FwdObsv-1, GunCbt-2, Mechanical-1, Rifle-1"]]
+;; Age distributions for living characters after service:
+'(->> make-living-character
+      (repeatedly 10000)
+      (map :age)
+      frequencies
+      (map vec)
+      (sort-by first)
+      vec)
+;;=>
+[[22 4792]
+ [26 2401]
+ [30 1277]
+ [34 681]
+ [38 355]
+ [42 207]
+ [46 121]
+ [50 68]
+ [54 46]
+ [58 23]
+ [62 14]
+ [66 9]
+ [70 2]
+ [74 1]
+ [78 1]
+ [82 1]
+ [94 1]]

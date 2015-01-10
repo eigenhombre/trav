@@ -41,7 +41,7 @@
        dorun) =not=> (throws))
 
 
-(facts "About rank and automatic skills"
+(facts "About rank and automatic skills..."
   (let [char-fn (fn [svc rank]
                   (-> (starting-character)
                       (assoc :actual-service svc)
@@ -62,3 +62,26 @@
         add-automatic-skills-for-rank
         :attributes
         :ss) => 12))
+
+
+(facts "About mustering out"
+  (fact "Being in the service earns you money."
+    (->> make-living-character
+         (repeatedly 100)
+         (map :credits)
+         (apply +)) => (roughly 1500000 900000))
+
+
+  (fact "Being in the service gets you stuff."
+    (->> make-living-character
+         (repeatedly 100)
+         (mapcat :possessions)
+         count) => (roughly 100 90))
+
+  (fact "Some people get Travellers' Aid Society."
+    (->> make-living-character
+         (repeatedly 100)
+         (map :memberships)
+         (apply concat)
+         (some #{'Travellers})) => truthy))
+

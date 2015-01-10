@@ -31,10 +31,15 @@ more) for [[http://en.wikipedia.org/wiki/Traveller_%28role-playing_game%29#Trave
 
 ** To Do
 *** Generation
-- Character mustering out/benefits/retirement
+- Character retirement benefits
 - Worlds ("Scouts"-based system generation)
 - Starships
 *** Simulation ideas
+- Monte Carlo questions:
+  - What is the average survival rate during character generation?
+  - What strategy optimizes this?
+  - What is the averge number of credits received during mustering out?
+  - Which skills are most common (depends on service duration, survivability, etc.)?
 - Character equipment/possessions
 - Narrated character histories
 - Encounters
