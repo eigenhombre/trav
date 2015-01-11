@@ -132,58 +132,54 @@ Example from the REPL:
 (def our-character (make-character))
 
 our-character
-
 ;;=>
-'{:royal-form nil,
-  :reinlisting? false,
-  :actual-service :navy,
-  :generation "I",
-  :age 30,
-  :commissioned? true,
-  :pension-annual 0,
-  :living? true,
-  :rank 2,
-  :first-name "Nelius",
-  :surnames ["Eidi"],
-  :terms-reached 3,
-  :prefix "Mr.",
-  :drafted? true,
-  :rank-name "Lieutenant",
-  :skills {Electronic 2, Gunnery 1, Engnrng 1, Mechanical 1, Dagger 1},
-  :desired-service :navy,
-  :credits 55000,
-  :memberships #{},
-  :possessions (HighPsg Dagger),
-  :gender :male,
-  :attributes {:ss 10, :ed 5, :in 9, :en 7, :dx 9, :st 3}}
+{:royal-form nil,
+ :reinlisting? false,
+ :actual-service :navy,
+ :generation "I",
+ :age 30,
+ :commissioned? true,
+ :pension-annual 0,
+ :living? true,
+ :rank 2,
+ :first-name "Nelius",
+ :surnames ["Eidi"],
+ :terms-reached 3,
+ :prefix "Mr.",
+ :drafted? true,
+ :rank-name "Lieutenant",
+ :skills {Electronic 2, Gunnery 1, Engnrng 1, Mechanical 1, Dagger 1},
+ :desired-service :navy,
+ :credits 55000,
+ :memberships #{},
+ :possessions (HighPsg Dagger),
+ :gender :male,
+ :attributes {:ss 10, :ed 5, :in 9, :en 7, :dx 9, :st 3}}
 
 
 (format-name-map our-character)
-
 ;;=>
 "Lieutenant Nelius Eidi, I (M), 30 yrs. old, navy, 39795A"
 
 
 (format-skills our-character)
-
 ;;=>
 "Electronic-2, Gunnery-1, Engnrng-1, Mechanical-1, Dagger-1"
 
 
 (format-swag our-character)
-
 ;;=>
 "Dagger, HighPsg, 55000 CR"
 
 
 ;; Age distributions for living characters after service:
-'(->> make-living-character
-      (repeatedly 10000)
-      (map :age)
-      frequencies
-      (map vec)
-      (sort-by first)
-      vec)
+(->> make-living-character
+     (repeatedly 10000)
+     (map :age)
+     frequencies
+     (map vec)
+     (sort-by first)
+     vec)
 ;;=>
 [[22 4792]
  [26 2401]
