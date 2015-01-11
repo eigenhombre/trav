@@ -20,32 +20,45 @@ more) for [[http://en.wikipedia.org/wiki/Traveller_%28role-playing_game%29#Trave
 
 * Status
 
-** Done
-- Characters
-  - Name selection
+/This software is very alpha./ APIs, namespaces, usage, etc. will
+probably all change.
+
+** What's Done
+- Character generation à la LBB book #1.
+  - Name selection, using [[https://github.com/eigenhombre/namejen][Namejen]].
   - Service determination
   - Commissioning, promotion, reinlistment
   - Survival/death, aging effects
   - Skill awards
+  - Mustering out benefits (pay, gear, memberships, pension)
   - Standard formatting, incl. UPPs and skills
-  - Mustering out benefits
 
-** To Do
-*** Generation
-- Character retirement benefits
-- Worlds ("Scouts"-based system generation)
-- Starships
+** What's Next
+
+Full system generation à la "Scouts" (LBB #5).
+
+** Future Ideas
+
 *** Simulation ideas
 - Monte Carlo questions:
   - What is the average survival rate during character generation?
   - What strategy optimizes this?
   - What is the averge number of credits received during mustering out?
   - Which skills are most common (depends on service duration, survivability, etc.)?
-- Character equipment/possessions
-- Narrated character histories
-- Encounters
+*** Other Generators
+- Starships
+- Terrain
+- Buildings / cities
+*** Gaming aids
+- Random Encounters
 - Interplanetary and interstellar travel
-- Character and ship combat
+*** Character enhancement
+- Character equipment/possessions
+- Narrated character histories using AI/machine writing
+*** Game engine
+- Combat
+  - Character (1-1, armies)
+  - Ship (1-1, fleets)
 - ...
 
 * Getting it
@@ -67,45 +80,45 @@ up a few characters on the command line:
 #+BEGIN_EXAMPLE
 $  lein run 10
 
-Orton Briggs (M), 30 yrs. old, 69D668
-Bribery-1, Gambling-2
-110000 CR
+Ubin Traka Ramsey Berta (M), 22 yrs. old, navy, 6987A7
+Cudgel-1
+HighPsg, 0 CR
 
-FourthOffc Macheal Rodney (F), 22 yrs. old, merchant, A73B97
-Navigation-1, VaccSuit-1, Electronic-1
-AutomaticPistol, 0 CR
+Ms. Atria Chak Knapper (F), 22 yrs. old, 862374
+Forgery-1, Electronic-1
+0 CR
 
-FourthOffc Sir Ishna Irotoshi Jendra Wayne Rissa (F), 34 yrs. old, merchant, 4A796B
-Mechanical-1, Gunnery-1, Brawling-2, Medical-1, AutomaticRifle-1
-LowPsg, LowPsg, 25000 CR
+Colonel Mardelisabelleena Alen (F), 38 yrs. old, army, 547994
+FwdObsv-1, BodyPistol-1, Bayonet-1, SMG-1, Spear-2, ATV-2, Rifle-1
+BodyPistol, LowPsg, 17000 CR (4000 CR annual)
 
-Captain Kasey (M), 30 yrs. old, army, 857CA6
-SMG-1, ATV-1, Brawling-2, Rifle-2
-HighPsg, MidPsg, MidPsg, 0 CR
+Von Hebe Tahsin (F), 22 yrs. old, scouts, C8A75C
+AirRaft-1, Pilot-1
+20000 CR
 
-Ndsay, 22 yrs. old, scouts, B8A585
-Medical-2, Pilot-1
-50000 CR
+Assy Karen Rina Vicki Ctor, 22 yrs. old, 277935
+Bribery-1, Gambling-1
+10000 CR
 
-Sir Lnora Anolis (F), 22 yrs. old, navy, 6685AC
-Gunnery-1
+Mr. Josef Stefan Ilya Juri, I (M), 22 yrs. old, 469A86
+Electronic-1
+LowPsg, 0 CR
+
+Mr. Hmed Lius Brette, III (M), 22 yrs. old, navy, 49A8B6
+Mechanical-1
 5000 CR
 
-Sande (F), 22 yrs. old, scouts, A84457
-Medical-1, Pilot-1
-Scout, 0 CR
+Mr. Darnest Hose Rrio, Jr. (M), 22 yrs. old, navy, 659C8A
+FwdObsv-1, BodyPistol-1
+HighPsg, 0 CR
 
-Cqulina Dennis Slaw (F), 22 yrs. old, 45566A
-Blade-1
-50000 CR
+FourthOffc Smael (M), 26 yrs. old, merchant, 94B749
+Mechanical-1, Jack-o-T-1, Streetwise-1
+LowPsg, LowPsg, Spear, 0 CR
 
-Captain Lmer Andeep Reen Iana (F), 26 yrs. old, army, C94B94
-Brawling-1, Halberd-1, SMG-1, Leader-1, ATV-2, Rifle-1
-HighPsg, 20000 CR
-
-Onny Ophe Alynn (F), 22 yrs. old, merchant, 646367
-Foil-1, Gunnery-1
-Foil, 0 CR
+FirstOffc Azaleesa Oerles (F), 42 yrs. old, merchant, 8A5D64
+Pilot-1, Jack-o-T-1, Medical-2, Gunnery-1, VaccSuit-1, Electronic-1, Brawling-2
+Spear, 41000 CR (6000 CR annual)
 
 $
 #+END_EXAMPLE
