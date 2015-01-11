@@ -128,7 +128,6 @@ generate (default 50).
 
 Example from the REPL:
 #+BEGIN_SRC clojure
-
 ;; Single character, w/ all metadata:
 (def our-character (make-character))
 
