@@ -2,8 +2,16 @@
 #+OPTIONS: toc:nil num:nil
 
 Clojure functions for generating random characters (and eventually
-more) for [[http://en.wikipedia.org/wiki/Traveller_%28role-playing_game%29#Traveller_.281977.2C_GDW.29][Classic Traveller]], a popular '80s-era role playing game
+more) for [[http://en.wikipedia.org/wiki/Traveller_(role-playing_game)][Traveller]], a popular '80s-era role playing game
 (RPG) still being used today.
+
+In Traveller, players create characters who explore, trade, build, and
+fight in a universe created by a "referee" or game master.  Traveller
+has many versions; [[http://en.wikipedia.org/wiki/Traveller_(role-playing_game)#Traveller_.281977.2C_GDW.29][Classic Traveller]] is the version I'm most familiar with;
+it remains many people's favorite version.
+
+The code here can be used (so far) for character generation; see
+[[Usage]], below.  System generation functionality to follow!
 
 * Why?
 
@@ -72,6 +80,7 @@ Pull requests welcome, but only for Classic Traveller, please.  I'm
 trying to stay within the constraints of the original Little Black
 Books for now (Scouts, Mercenary and High Guard OK).
 
+#+NAME: Usage
 * Usage
 
 See the [[https://github.com/eigenhombre/trav/blob/master/src/trav/char.clj][functions and examples]] in the =trav.char= namespace.  Or, roll
