@@ -1,6 +1,6 @@
-(ns trav.char-test
+(ns trav.chars-test
   (:require [midje.sweet :refer :all]
-            [trav.char :refer :all]
+            [trav.chars :refer :all]
             [trav.dice :refer [d]]))
 
 

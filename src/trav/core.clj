@@ -1,9 +1,9 @@
 (ns trav.core
   (:gen-class)
-  (:require [trav.char :refer [make-living-character
-                               format-name-map
-                               format-skills
-                               format-swag]]))
+  (:require [trav.chars :refer [make-living-character
+                                format-name-map
+                                format-skills
+                                format-swag]]))
 
 
 (defn -main [& [nstr & _]]
