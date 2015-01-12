@@ -11,7 +11,7 @@ has many versions; [[http://en.wikipedia.org/wiki/Traveller_(role-playing_game)#
 and it remains many people's favorite version.
 
 The code here can be used (so far) for character generation; see
-[[Usage]], below.  System generation functionality to follow!
+[[Usage]], below.  System generation functionality is in progress!
 
 * Why?
 
