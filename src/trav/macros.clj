@@ -1,8 +1,12 @@
 (ns trav.macros
+  "
+  Macro definitions, mostly for defining tables for the purposes of
+  making them look like the LBBs.  Normally this would be a lot of
+  macro sugar for this sort of project, but one goal I've had is to
+  make it easy to go back and forth between the rule books and the
+  code and see how various things are similarly defined.
+  "
   (:require [trav.util :refer [keywordize]]))
-
-
-;; Macro definitions for tables, etc.:
 
 
 (defmacro defcoll [name & syms]
