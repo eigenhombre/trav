@@ -32,7 +32,7 @@ The code here can be used (so far) for character generation; see
 probably all change.
 
 ** What's Done
-- Character generation à la LBB book #1.
+- Character generation à la LBB #1.
   - Name selection, using [[https://github.com/eigenhombre/namejen][Namejen]].
   - Service determination
   - Commissioning, promotion, reinlistment
@@ -43,7 +43,7 @@ probably all change.
 
 ** What's Next
 
-Full system generation à la "Scouts" (LBB #5).
+Full system generation à la "Scouts" (LBB #6).
 
 ** Future Ideas
 
