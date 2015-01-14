@@ -18,6 +18,7 @@
   9      G
   r10-12 F)
 
+
 (def-range-table companion-type
   1      B
   2      A
@@ -50,87 +51,96 @@
   r10-12 D)
 
 
+(defn roll-within-range [table roll]
+  (let [ks (keys table)
+        max-key (apply max (keys table))
+        min-key (apply min (keys table))]
+    (->> max-key
+         (min roll)
+         (max min-key)
+         table)))
+
+
+(defn- get-size-for-type [table type subtype size-roll]
+  (let [s0 (roll-within-range table size-roll)]
+    (cond
+     (and (= s0 'IV)
+          (or (and (= type 'K)
+                   (> subtype 4))
+              (= type 'M)))
+     'V
+
+     (and (= s0 'VI)
+          (or (= type 'A)
+              (= type 'B)
+              (and (= type 'F)
+                   (< subtype 5))))
+     'V
+     :else s0)))
+
+
 (defn make-system [& [prev-type-roll prev-size-roll]]
   (if-not prev-type-roll
     (let [type-roll (d)
-          type-subval (rand-int 10)
+          type (primary-type type-roll)
+          subtype (rand-int 10)
           size-roll (d)]
       {:is-primary? true
-       :type (primary-type type-roll)
-       :type-subval type-subval
-       :size (primary-size size-roll)
+       :type type
+       :subtype subtype
+       :size (get-size-for-type primary-size type subtype size-roll)
        :secondaries (repeatedly (-> (d)
                                     system-star-count
                                     dec)
                                 (partial make-system type-roll size-roll))})
     (let [type-roll (+ prev-type-roll (d))
-          type-subval (rand-int 10)
+          type (roll-within-range primary-type type-roll)
+          subtype (rand-int 10)
           size-roll (+ prev-size-roll (d))]
       {:is-primary? false
-       :type (primary-type (min type-roll (->> primary-type
-                                               keys
-                                               (apply max))))
-       :type-subval type-subval
-       :size (primary-size (min type-roll (->> primary-size
-                                               keys
-                                               (apply max))))})))
+       :type type
+       :subtype subtype
+       :size (get-size-for-type secondary-size type subtype size-roll)})))
 
 
 (evalq (repeatedly 10 make-system))
 
 ;;=>
 '({:is-primary? true,
-   :type G,
-   :type-subval 9,
+   :type M,
+   :subtype 0,
    :size V,
-   :secondaries ()}
-  {:is-primary? true,
-   :type F,
-   :type-subval 6,
-   :size V,
-   :secondaries ()}
-  {:is-primary? true,
-   :type K,
-   :type-subval 4,
-   :size VI,
-   :secondaries ()}
-  {:is-primary? true,
-   :type F,
-   :type-subval 5,
-   :size V,
-   :secondaries
-   ({:is-primary? false, :type F, :type-subval 3, :size D})}
-  {:is-primary? true,
-   :type K,
-   :type-subval 0,
-   :size V,
-   :secondaries
-   ({:is-primary? false, :type F, :type-subval 9, :size D})}
+   :secondaries ({:is-primary? false, :type F, :subtype 5, :size D})}
   {:is-primary? true,
    :type M,
-   :type-subval 4,
+   :subtype 7,
    :size V,
-   :secondaries ()}
-  {:is-primary? true,
-   :type M,
-   :type-subval 5,
-   :size V,
-   :secondaries
-   ({:is-primary? false, :type F, :type-subval 1, :size D})}
-  {:is-primary? true,
-   :type G,
-   :type-subval 5,
-   :size V,
-   :secondaries ()}
-  {:is-primary? true,
-   :type F,
-   :type-subval 3,
-   :size V,
-   :secondaries ()}
+   :secondaries ({:is-primary? false, :type F, :subtype 5, :size D})}
   {:is-primary? true,
    :type K,
-   :type-subval 2,
+   :subtype 5,
    :size V,
-   :secondaries
-   ({:is-primary? false, :type F, :type-subval 4, :size D})})
-
+   :secondaries ({:is-primary? false, :type F, :subtype 3, :size D})}
+  {:is-primary? true,
+   :type M,
+   :subtype 7,
+   :size V,
+   :secondaries ({:is-primary? false, :type F, :subtype 3, :size D})}
+  {:is-primary? true, :type M, :subtype 3, :size V, :secondaries ()}
+  {:is-primary? true,
+   :type M,
+   :subtype 1,
+   :size V,
+   :secondaries ({:is-primary? false, :type M, :subtype 1, :size D})}
+  {:is-primary? true, :type F, :subtype 2, :size V, :secondaries ()}
+  {:is-primary? true,
+   :type G,
+   :subtype 1,
+   :size II,
+   :secondaries ({:is-primary? false, :type F, :subtype 4, :size V})}
+  {:is-primary? true, :type M, :subtype 6, :size V, :secondaries ()}
+  {:is-primary? true,
+   :type M,
+   :subtype 5,
+   :size V,
+   :secondaries ({:is-primary? false, :type F, :subtype 5, :size D})})
