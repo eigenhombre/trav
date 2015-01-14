@@ -92,3 +92,12 @@
                         (map expand)
                         (apply merge)))
        ~tname))
+
+
+(defmacro evalq
+  "
+  Macro for interpolating an expression inline in source
+  code (e.g. for Marginalia).
+  "
+  [expr]
+  ``(quote ~~expr))

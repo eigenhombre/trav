@@ -1,5 +1,6 @@
 (ns trav.worlds
-  (:require [trav.macros :refer [def-range-table]]
+  (:require [trav.macros :refer [def-range-table
+                                 evalq]]
             [trav.dice :refer [d]]))
 
 
@@ -26,38 +27,110 @@
   r9-12  M)
 
 
-(defn make-star [& [parg & _]]
-  (if (= parg :primary)
-    {:is-primary? true
-     :type (primary-type (d))}
-    {:is-primary? false
-     :type (companion-type (d))}))
+(def-range-table primary-size
+  0      Ia
+  1      Ib
+  2      II
+  3      III
+  4      IV
+  r5-10  V
+  11     VI
+  12     D)
 
 
-(defn make-system []
-  (let [num-secondaries (-> (d)
-                            system-star-count
-                            dec)]
-    {:stars {:primary (make-star :primary)
-             :secondaries (repeatedly num-secondaries make-star)}}))
+(def-range-table secondary-size
+  0      Ia
+  1      Ib
+  2      II
+  3      III
+  4      IV
+  r5-6   D
+  r7-8   V
+  9      VI
+  r10-12 D)
 
 
-`(quote ~(repeatedly 10 make-system))
+(defn make-system [& [prev-type-roll prev-size-roll]]
+  (if-not prev-type-roll
+    (let [type-roll (d)
+          type-subval (rand-int 10)
+          size-roll (d)]
+      {:is-primary? true
+       :type (primary-type type-roll)
+       :type-subval type-subval
+       :size (primary-size size-roll)
+       :secondaries (repeatedly (-> (d)
+                                    system-star-count
+                                    dec)
+                                (partial make-system type-roll size-roll))})
+    (let [type-roll (+ prev-type-roll (d))
+          type-subval (rand-int 10)
+          size-roll (+ prev-size-roll (d))]
+      {:is-primary? false
+       :type (primary-type (min type-roll (->> primary-type
+                                               keys
+                                               (apply max))))
+       :type-subval type-subval
+       :size (primary-size (min type-roll (->> primary-size
+                                               keys
+                                               (apply max))))})))
+
+
+(evalq (repeatedly 10 make-system))
 
 ;;=>
-'({:stars {:primary {:is-primary? true, :type M}, :secondaries ()}}
-  {:stars {:primary {:is-primary? true, :type F}, :secondaries ()}}
-  {:stars {:primary {:is-primary? true, :type A}, :secondaries ()}}
-  {:stars {:primary {:is-primary? true, :type M}, :secondaries ()}}
-  {:stars
-   {:primary {:is-primary? true, :type M},
-    :secondaries ({:is-primary? false, :type K})}}
-  {:stars
-   {:primary {:is-primary? true, :type K},
-    :secondaries ({:is-primary? false, :type M})}}
-  {:stars {:primary {:is-primary? true, :type M}, :secondaries ()}}
-  {:stars {:primary {:is-primary? true, :type M}, :secondaries ()}}
-  {:stars
-   {:primary {:is-primary? true, :type M},
-    :secondaries ({:is-primary? false, :type M})}}
-  {:stars {:primary {:is-primary? true, :type F}, :secondaries ()}})
+'({:is-primary? true,
+   :type G,
+   :type-subval 9,
+   :size V,
+   :secondaries ()}
+  {:is-primary? true,
+   :type F,
+   :type-subval 6,
+   :size V,
+   :secondaries ()}
+  {:is-primary? true,
+   :type K,
+   :type-subval 4,
+   :size VI,
+   :secondaries ()}
+  {:is-primary? true,
+   :type F,
+   :type-subval 5,
+   :size V,
+   :secondaries
+   ({:is-primary? false, :type F, :type-subval 3, :size D})}
+  {:is-primary? true,
+   :type K,
+   :type-subval 0,
+   :size V,
+   :secondaries
+   ({:is-primary? false, :type F, :type-subval 9, :size D})}
+  {:is-primary? true,
+   :type M,
+   :type-subval 4,
+   :size V,
+   :secondaries ()}
+  {:is-primary? true,
+   :type M,
+   :type-subval 5,
+   :size V,
+   :secondaries
+   ({:is-primary? false, :type F, :type-subval 1, :size D})}
+  {:is-primary? true,
+   :type G,
+   :type-subval 5,
+   :size V,
+   :secondaries ()}
+  {:is-primary? true,
+   :type F,
+   :type-subval 3,
+   :size V,
+   :secondaries ()}
+  {:is-primary? true,
+   :type K,
+   :type-subval 2,
+   :size V,
+   :secondaries
+   ({:is-primary? false, :type F, :type-subval 4, :size D})})
+
