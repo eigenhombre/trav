@@ -51,6 +51,43 @@
   r10-12 D)
 
 
+(def-range-table companion-orbit
+  r0-3   Close
+  4      1
+  5      2
+  6      3
+  7      D1+4
+  8      D1+5
+  9      D1+6
+  10     D1+7
+  11     D1+8
+  12     Far)
+
+
+(def-range-table gas-giant-present
+  r1-9   yes
+  r10-12 no)
+
+
+(def-range-table gas-giant-qty
+  r1-3   1
+  r4-5   2
+  r6-7   3
+  r8-10  4
+  r9-12  5)
+
+
+(def-range-table plantetoid-present
+  r1-6   yes
+  r7-12  no)
+
+
+(def-range-table planetoid-qty
+  0      3
+  r1-6   2
+  r7-12  1)
+
+
 (defn roll-within-range [table roll]
   (let [ks (keys table)
         max-key (apply max (keys table))
