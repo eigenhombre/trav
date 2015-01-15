@@ -7,8 +7,11 @@ more) for [[http://en.wikipedia.org/wiki/Traveller_(role-playing_game)][Travelle
 
 In Traveller, players create characters who explore, trade, build, and
 fight in a universe created by a "referee" or game master.  Traveller
-has many versions; [[http://en.wikipedia.org/wiki/Traveller_(role-playing_game)#Traveller_.281977.2C_GDW.29][Classic Traveller]] is the version I'm most familiar with,
-and it remains many people's favorite version.
+has many versions; [[http://en.wikipedia.org/wiki/Traveller_(role-playing_game)#Traveller_.281977.2C_GDW.29][Classic Traveller]] is the version I'm most familiar
+with, and it remains many people's favorite version.  Classic
+Traveller was produced in the 1980s as a series of "Little Black
+Books" (LBBs) -- 3 core books, plus a series of rule expansions,
+playing scenarios, and related data.
 
 The code here can be used (so far) for character generation; see
 [[Usage]], below.  System generation functionality is in progress!
