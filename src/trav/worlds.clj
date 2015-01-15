@@ -1,6 +1,5 @@
 (ns trav.worlds
-  (:require [trav.macros :refer [def-range-table
-                                 evalq]]
+  (:require [trav.macros :refer :all]
             [trav.dice :refer [d]]))
 
 
