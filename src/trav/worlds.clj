@@ -88,6 +88,33 @@
   r7-12  1)
 
 
+(def-zone-table size-1a
+      B0 B5 A0 A5 F0 F5 G0 G5 K0 K5 M0 M5 M9
+  1   -- --  -  -  -  -  -  -  -  -  -  -  -
+  2   -- -- -- --  -  -  -  -  -  -  -  -  -
+  3   -- -- -- -- -- --  -  -  -  -  -  -  -
+  4   -- -- -- -- -- -- -- --  -  -  -  -  -
+  5   -- -- -- -- -- -- -- --  -  -  -  -  -
+  6   -- -- -- --  I  I -- -- -- --  -  -  -
+  7   --  I  I  I  I  I  I  I  I  I  I  -  -
+  8    I  I  I  I  I  I  I  I  I  I  I  I  I
+  9    I  I  I  I  I  I  I  I  I  I  I  I  I
+  10   I  I  I  I  I  I  I  I  I  I  I  I  I
+  11   I  I  I  I  I  H  I  I  I  I  I  I  I
+  12   I  H  H  H  H  H  H  H  H  H  H  H  H
+  13   H  O  O  O  O  O  O  O  O  O  O  O  O
+  14   O  O  O  O  O  O  O  O  O  O  O  O  O)
+
+
+(evalq
+ (-> size-1a
+     (get 11)
+     (get 'F5)))
+
+;;=>
+'H
+
+
 (defn roll-within-range [table roll]
   (let [ks (keys table)
         max-key (apply max (keys table))

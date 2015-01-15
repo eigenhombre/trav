@@ -94,6 +94,21 @@
        ~tname))
 
 
+(defmacro def-zone-table [tname & body]
+  `(do
+     (def ~tname
+       (let [data# (quote ~body)
+             hdr# (take 13 data#)
+             rows# (->> data# (drop 13) (partition 14))]
+         (->> rows#
+              (map rest)
+              (map (partial interleave hdr#))
+              (map (partial apply hash-map))
+              (interleave (map first rows#))
+              (apply hash-map))))
+     ~tname))
+
+
 (defmacro evalq
   "
   Macro for interpolating an expression inline in source
