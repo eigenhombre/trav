@@ -88,7 +88,7 @@
   r7-12  1)
 
 
-(def-zone-table size-1a
+(def-zone-table size-Ia
       B0 B5 A0 A5 F0 F5 G0 G5 K0 K5 M0 M5 M9
   1   -- --  -  -  -  -  -  -  -  -  -  -  -
   2   -- -- -- --  -  -  -  -  -  -  -  -  -
@@ -106,8 +106,81 @@
   14   O  O  O  O  O  O  O  O  O  O  O  O  O)
 
 
+(def-zone-table size-Ib
+      B0 B5 A0 A5 F0 F5 G0 G5 K0 K5 M0 M5 M9
+  1   -- -- -- -- -- -- --  -  -  -  -  -  -
+  2   -- -- -- -- -- -- -- --  -  -  -  -  -
+  3   -- -- -- -- -- -- -- --  -  -  -  -  -
+  4   -- -- -- -- --  I  I --  -  -  -  -  -
+  5   -- --  I  I  I  I  I  I  I --  -  -  -
+  6   --  I  I  I  I  I  I  I  I  I  I  -  -
+  7   --  I  I  I  I  I  I  I  I  I  I  I  -
+  8    I  I  I  I  I  I  I  I  I  I  I  I  I
+  9    I  I  I  I  I  I  I  I  I  I  I  I  I
+  10   I  I  I  H  H  H  H  H  H  I  I  I  I
+  11   I  H  H  O  O  O  O  O  O  H  H  I  I
+  12   I  O  O  O  O  O  O  O  O  O  O  H  H
+  13   H  O  O  O  O  O  O  O  O  O  O  O  O
+  14   O  O  O  O  O  O  O  O  O  O  O  O  O)
+
+
+(def-zone-table size-II
+      B0 B5 A0 A5 F0 F5 G0 G5 K0 K5 M0 M5 M9
+  1   -- -- -- -- -- -- -- -- --  -  -  -  -
+  2   -- -- --  I  I  I  I  I  I --  -  -  -
+  3   -- --  I  I  I  I  I  I  I  I  -  -  -
+  4   -- --  I  I  I  I  I  I  I  I  I  -  -
+  5   --  I  I  I  I  I  I  I  I  I  I  -  -
+  6   --  I  I  I  I  I  I  I  I  I  I  I  I
+  7    I  I  I  I  I  I  I  I  I  I  I  I  I
+  8    I  I  I  H  H  H  H  H  I  I  I  I  I
+  9    I  I  H  O  O  O  O  O  H  H  I  I  I
+  10   I  I  O  O  O  O  O  O  O  O  H  I  I
+  11   I  H  O  O  O  O  O  O  O  O  O  H  H
+  12   H  O  O  O  O  O  O  O  O  O  O  O  O
+  13   O  O  O  O  O  O  O  O  O  O  O  O  O)
+
+
+(def-zone-table size-III
+      B0 B5 A0 A5 F0 F5 G0 G5 K0 K5 M0 M5 M9
+  1   -- --  I  I  I  I  I  I  I  I --  -  -
+  2   -- --  I  I  I  I  I  I  I  I  I  -  -
+  3   -- --  I  I  I  I  I  I  I  I  I  -  -
+  4   -- --  I  I  I  I  I  I  I  I  I  I  -
+  5   --  I  I  I  I  I  I  I  I  I  I  I  I
+  6   --  I  I  I  H  H  H  I  I  I  I  I  I
+  7    I  I  I  H  O  O  O  H  H  I  I  I  I
+  8    I  I  O  O  O  O  O  O  O  H  H  I  I
+  9    I  I  H  O  O  O  O  O  O  O  O  H  H
+  10   I  H  O  O  O  O  O  O  O  O  O  O  O
+  11   I  O  O  O  O  O  O  O  O  O  O  O  O
+  12   H  O  O  O  O  O  O  O  O  O  O  O  O
+  13   O  O  O  O  O  O  O  O  O  O  O  O  O)
+
+
+;; FIXME: handle odd-sized Size IV table here...
+
+
+(def-zone-table size-V
+      B0 B5 A0 A5 F0 F5 G0 G5 K0 K5 M0 M5 M9
+  0   -- --  I  I  I  I  I  I  I  H  H  O  O
+  1   -- --  I  I  I  I  I  I  I  O  O  O  O
+  2   -- --  I  I  I  I  I  H  H  O  O  O  O
+  3   -- --  I  I  I  I  H  O  O  O  O  O  O
+  4   --  I  I  I  I  H  O  O  O  O  O  O  O
+  5   --  I  I  I  H  O  O  O  O  O  O  O  O
+  6    I  I  I  H  O  O  O  O  O  O  O  O  O
+  7    I  I  H  O  O  O  O  O  O  O  O  O  O
+  8    I  I  O  O  O  O  O  O  O  O  O  O  O
+  9    I  H  O  O  O  O  O  O  O  O  O  O  O
+  10   I  O  O  O  O  O  O  O  O  O  O  O  O
+  11   I  O  O  O  O  O  O  O  O  O  O  O  O
+  12   H  O  O  O  O  O  O  O  O  O  O  O  O
+  13   O  O  O  O  O  O  O  O  O  O  O  O  O)
+
+
 (evalq
- (-> size-1a
+ (-> size-Ia
      (get 11)
      (get 'F5)))
 
