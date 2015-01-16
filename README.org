@@ -18,7 +18,7 @@ The code here can be used (so far) for character generation; see
 
 * Why?
 
-- To experiment with using [[https://github.com/eigenhombre/trav/blob/master/src/trav/tables.clj#L71][small DSLs]] to represent RPG rules and tables
+- To experiment with using [[https://github.com/eigenhombre/trav/blob/master/src/trav/chars.clj#L85][small DSLs]] to represent RPG rules and tables
 - To indulge an ancient fascination with
   - simulation
   - science fiction
