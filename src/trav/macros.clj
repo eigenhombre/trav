@@ -98,8 +98,10 @@
   `(do
      (def ~tname
        (let [data# (quote ~body)
-             hdr# (take 13 data#)
-             rows# (->> data# (drop 13) (partition 14))]
+             hdr# (take-while symbol? data#)
+             rows# (->> data#
+                        (drop-while symbol?)
+                        (partition (inc (count hdr#))))]
          (->> rows#
               (map rest)
               (map (partial interleave hdr#))
