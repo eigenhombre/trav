@@ -202,8 +202,9 @@
   4    O  O  O  O  O  O  O  O)
 
 
-(def-zone-table size-white-dwarf
-      DB DA DF DG DK DM
+;; White dwarves
+(def-zone-table size-D
+     DB DA DF DG DK DM
  0    H  O  O  O  O  O
  1    O  O  O  O  O  O
  2    O  O  O  O  O  O
@@ -218,6 +219,42 @@
 
 ;;=>
 'H
+
+
+(defn- round-for-table [n]
+  (* (int (/ n 5)) 5))
+
+
+(defn zone-sym-to-kw [s]
+  ({'I :inner
+    'O :outer
+    '-- :scorched
+    '- :inside-star
+    'H :habitable} s))
+
+
+(defn zone-for-size-type-and-orbit [size type subtype orbit]
+  (if (= size 'D)  ;; Dwarf table is simple but has special column names:
+    (zone-sym-to-kw
+     (if (and (= type 'D)
+              (= subtype 'B)
+              (= orbit 0))
+       'H
+       'O))
+    ;; Otherwise, figure out nearest appropriate row and column for lookup:
+    (let [table-for-size (->> size (str "size-") symbol eval)
+          available-orbits (keys table-for-size)
+          [min-orbit max-orbit] (apply (juxt min max) available-orbits)
+          row (max (min max-orbit orbit) min-orbit)
+          subtable (table-for-size row)
+          typesym #(symbol (str %1 %2))
+          ;; Handle last column, e.g. M9:
+          [nine-key] (filter (fn [k] (->> k str last (= \9)))
+                             (keys subtable))
+          k (if (= nine-key (typesym type subtype))
+              nine-key
+              (typesym type (round-for-table subtype)))]
+      (-> k subtable zone-sym-to-kw))))
 
 
 (defn roll-within-range [table roll]
