@@ -259,10 +259,9 @@
 
 (defn roll-within-range [table roll]
   (let [ks (keys table)
-        max-key (apply max (keys table))
-        min-key (apply min (keys table))]
-    (->> max-key
-         (min roll)
+        [max-key min-key] (apply (juxt max min) (keys table))]
+    (->> roll
+         (min max-key)
          (max min-key)
          table)))
 
@@ -285,9 +284,9 @@
      :else s0)))
 
 
-(defn make-system [& [prev-type-roll prev-size-roll]]
-  (if-not prev-type-roll
-    (let [type-roll (d)
+(defn starting-system
+  ([]
+   (let [type-roll (d)
           type (primary-type type-roll)
           subtype (rand-int 10)
           size-roll (d)]
@@ -298,8 +297,11 @@
        :secondaries (repeatedly (-> (d)
                                     system-star-count
                                     dec)
-                                (partial make-system type-roll size-roll))})
-    (let [type-roll (+ prev-type-roll (d))
+                                (partial starting-system
+                                         type-roll
+                                         size-roll))}))
+  ([prev-type-roll prev-size-roll]
+   (let [type-roll (+ prev-type-roll (d))
           type (roll-within-range primary-type type-roll)
           subtype (rand-int 10)
           size-roll (+ prev-size-roll (d))]
@@ -309,44 +311,26 @@
        :size (get-size-for-type secondary-size type subtype size-roll)})))
 
 
-(evalq (repeatedly 10 make-system))
+;; FIXME: finish this
+(defn calc-available-orbits [sys]
+  (let [maxo (d 2)
+        maxo (+ maxo (condp = (:size sys)
+                       'III 4
+                       'Ia  8
+                       'Ib  8
+                       'II  8
+                       0))
+        maxo (+ maxo (condp = (:type sys)
+                       'M -4
+                       'K -2
+                       0))]
+    (assoc sys :available-orbits (range (inc maxo)))))
 
-;;=>
-'({:is-primary? true,
-   :type M,
-   :subtype 0,
-   :size V,
-   :secondaries ({:is-primary? false, :type F, :subtype 5, :size D})}
-  {:is-primary? true,
-   :type M,
-   :subtype 7,
-   :size V,
-   :secondaries ({:is-primary? false, :type F, :subtype 5, :size D})}
-  {:is-primary? true,
-   :type K,
-   :subtype 5,
-   :size V,
-   :secondaries ({:is-primary? false, :type F, :subtype 3, :size D})}
-  {:is-primary? true,
-   :type M,
-   :subtype 7,
-   :size V,
-   :secondaries ({:is-primary? false, :type F, :subtype 3, :size D})}
-  {:is-primary? true, :type M, :subtype 3, :size V, :secondaries ()}
-  {:is-primary? true,
-   :type M,
-   :subtype 1,
-   :size V,
-   :secondaries ({:is-primary? false, :type M, :subtype 1, :size D})}
-  {:is-primary? true, :type F, :subtype 2, :size V, :secondaries ()}
-  {:is-primary? true,
-   :type G,
-   :subtype 1,
-   :size II,
-   :secondaries ({:is-primary? false, :type F, :subtype 4, :size V})}
-  {:is-primary? true, :type M, :subtype 6, :size V, :secondaries ()}
-  {:is-primary? true,
-   :type M,
-   :subtype 5,
-   :size V,
-   :secondaries ({:is-primary? false, :type F, :subtype 5, :size D})})
+
+(defn make-system []
+  (-> (starting-system)
+      calc-available-orbits))
+
+
+(evalq (->> make-system
+            (repeatedly 30)))
