@@ -1,6 +1,7 @@
 (ns trav.worlds
-  (:require [trav.macros :refer :all]
-            [trav.dice :refer [d]]))
+  (:require [namejen.names :refer [generic-name]]
+            [trav.dice :refer [d]]
+            [trav.macros :refer :all]))
 
 
 (def-range-table system-star-count
@@ -311,26 +312,83 @@
        :size (get-size-for-type secondary-size type subtype size-roll)})))
 
 
-;; FIXME: finish this
+(defn name-system [sys]
+  (-> sys
+      (assoc :name (generic-name))
+      (assoc :secondaries (map name-system (:secondaries sys)))))
+
+
+;; FIXME: finish this.
 (defn calc-available-orbits [sys]
-  (let [maxo (d 2)
-        maxo (+ maxo (condp = (:size sys)
-                       'III 4
-                       'Ia  8
-                       'Ib  8
-                       'II  8
-                       0))
-        maxo (+ maxo (condp = (:type sys)
-                       'M -4
-                       'K -2
-                       0))]
-    (assoc sys :available-orbits (range (inc maxo)))))
+  (let [max-orbit (-> (d 2)
+                      (+ (condp = (:size sys)
+                           'III 4
+                           'Ia  8
+                           'Ib  8
+                           'II  8
+                           0))
+                      (+ (condp = (:type sys)
+                           'M -4
+                           'K -2
+                           0)))]
+    (assoc sys :available-orbits (range (inc max-orbit)))))
 
 
 (defn make-system []
   (-> (starting-system)
+      name-system
       calc-available-orbits))
 
 
 (evalq (->> make-system
-            (repeatedly 30)))
+            (repeatedly 5)))
+
+
+;;=>
+'({:available-orbits (0 1 2 3 4),
+   :name "Erite",
+   :is-primary? true,
+   :type M,
+   :subtype 1,
+   :size V,
+   :secondaries ()}
+  {:available-orbits (0 1),
+   :name "Artfast",
+   :is-primary? true,
+   :type M,
+   :subtype 4,
+   :size V,
+   :secondaries ()}
+  {:available-orbits (0 1 2 3),
+   :name "Elly",
+   :is-primary? true,
+   :type M,
+   :subtype 2,
+   :size V,
+   :secondaries
+   ({:secondaries (),
+     :name "Toerless",
+     :is-primary? false,
+     :type F,
+     :subtype 0,
+     :size D})}
+  {:available-orbits (),
+   :name "Urtis",
+   :is-primary? true,
+   :type M,
+   :subtype 2,
+   :size V,
+   :secondaries ()}
+  {:available-orbits (0 1 2 3 4 5 6 7 8 9 10 11),
+   :name "Frederick",
+   :is-primary? true,
+   :type G,
+   :subtype 0,
+   :size V,
+   :secondaries
+   ({:secondaries (),
+     :name "Dawn",
+     :is-primary? false,
+     :type F,
+     :subtype 7,
+     :size D})})
