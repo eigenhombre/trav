@@ -234,7 +234,7 @@
     'H :habitable} s))
 
 
-(defn zone-for-size-type-and-orbit [size type subtype orbit]
+(defn lookup-zone [size type subtype orbit]
   (if (= size 'D)  ;; Dwarf table is simple but has special column names:
     (zone-sym-to-kw
      (if (and (= type 'D)
@@ -288,28 +288,29 @@
 (defn starting-system
   ([]
    (let [type-roll (d)
-          type (primary-type type-roll)
-          subtype (rand-int 10)
-          size-roll (d)]
-      {:is-primary? true
-       :type type
-       :subtype subtype
-       :size (get-size-for-type primary-size type subtype size-roll)
-       :secondaries (repeatedly (-> (d)
-                                    system-star-count
-                                    dec)
-                                (partial starting-system
-                                         type-roll
-                                         size-roll))}))
+         type (primary-type type-roll)
+         subtype (rand-int 10)
+         size-roll (d)
+         secondaries (repeatedly (-> (d)
+                                     system-star-count
+                                     dec)
+                                 (partial starting-system
+                                          type-roll
+                                          size-roll))]
+     {:is-primary? true
+      :type type
+      :subtype subtype
+      :size (get-size-for-type primary-size type subtype size-roll)
+      :secondaries secondaries}))
   ([prev-type-roll prev-size-roll]
    (let [type-roll (+ prev-type-roll (d))
-          type (roll-within-range primary-type type-roll)
-          subtype (rand-int 10)
-          size-roll (+ prev-size-roll (d))]
-      {:is-primary? false
-       :type type
-       :subtype subtype
-       :size (get-size-for-type secondary-size type subtype size-roll)})))
+         type (roll-within-range primary-type type-roll)
+         subtype (rand-int 10)
+         size-roll (+ prev-size-roll (d))]
+     {:is-primary? false
+      :type type
+      :subtype subtype
+      :size (get-size-for-type secondary-size type subtype size-roll)})))
 
 
 (defn name-system [sys]
@@ -318,8 +319,11 @@
       (assoc :secondaries (map name-system (:secondaries sys)))))
 
 
-;; FIXME: finish this.
-(defn calc-available-orbits [sys]
+(defn orbit-is-inside-star [{:keys [size type subtype] :as star} orbit]
+  (= (lookup-zone size type subtype orbit) :inside-star))
+
+
+(defn orbits [{:keys [size type subtype] :as sys}]
   (let [max-orbit (-> (d 2)
                       (+ (condp = (:size sys)
                            'III 4
@@ -330,65 +334,190 @@
                       (+ (condp = (:type sys)
                            'M -4
                            'K -2
-                           0)))]
-    (assoc sys :available-orbits (range (inc max-orbit)))))
+                           0)))
+        orbits (-> max-orbit inc range)]
+    (->> orbits
+         (map (partial lookup-zone size type subtype))
+         (zipmap orbits)
+         (assoc sys :orbits))))
+
+
+(defn- expand-dm-field [orbit-lookup-result]
+  (if-let [[_ dm] (re-find #"D1\+(\d+)" (str orbit-lookup-result))]
+              (+ (Integer. dm) (d 1))
+              orbit-lookup-result))
+
+
+(defn place-companions [{:keys [secondaries
+                                orbits] :as star}]
+  (letfn [(set-orbit [n companion]
+            (let [comp-orbit
+                  (->> (d)
+                       (+ (* n 4)) ;; Second companion generally further out
+                       (roll-within-range companion-orbit)
+                       expand-dm-field)
+
+                  orbit (cond
+                         (symbol? comp-orbit) comp-orbit
+                         (orbit-is-inside-star star comp-orbit) 'Close
+                         :else comp-orbit)]
+              (assoc companion :orbit orbit)))]
+    (assoc star :secondaries
+           (map-indexed set-orbit secondaries))))
 
 
 (defn make-system []
   (-> (starting-system)
       name-system
-      calc-available-orbits))
+      orbits
+      place-companions))
 
 
 (evalq (->> make-system
-            (repeatedly 5)))
-
+            repeatedly
+            (take 10)))
 
 ;;=>
-'({:available-orbits (0 1 2 3 4),
-   :name "Erite",
-   :is-primary? true,
-   :type M,
-   :subtype 1,
-   :size V,
-   :secondaries ()}
-  {:available-orbits (0 1),
-   :name "Artfast",
+'({:orbits
+   {0 :habitable,
+    1 :outer,
+    2 :outer,
+    3 :outer,
+    4 :outer,
+    5 :outer,
+    6 :outer,
+    7 :outer},
+   :name "Rogue",
    :is-primary? true,
    :type M,
    :subtype 4,
    :size V,
    :secondaries ()}
-  {:available-orbits (0 1 2 3),
-   :name "Elly",
-   :is-primary? true,
-   :type M,
-   :subtype 2,
-   :size V,
-   :secondaries
-   ({:secondaries (),
-     :name "Toerless",
-     :is-primary? false,
-     :type F,
-     :subtype 0,
-     :size D})}
-  {:available-orbits (),
-   :name "Urtis",
-   :is-primary? true,
-   :type M,
-   :subtype 2,
-   :size V,
-   :secondaries ()}
-  {:available-orbits (0 1 2 3 4 5 6 7 8 9 10 11),
-   :name "Frederick",
+  {:orbits
+   {0 :inner,
+    1 :inner,
+    2 :habitable,
+    3 :outer,
+    4 :outer,
+    5 :outer,
+    6 :outer,
+    7 :outer},
+   :name "Henry",
    :is-primary? true,
    :type G,
+   :subtype 6,
+   :size V,
+   :secondaries ()}
+  {:orbits
+   {0 :habitable, 1 :outer, 2 :outer, 3 :outer, 4 :outer, 5 :outer},
+   :name "Amanavendra",
+   :is-primary? true,
+   :type M,
    :subtype 0,
    :size V,
+   :secondaries ()}
+  {:orbits
+   {0 :habitable,
+    1 :outer,
+    2 :outer,
+    3 :outer,
+    4 :outer,
+    5 :outer,
+    6 :outer},
+   :name "Urevis",
+   :is-primary? true,
+   :type M,
+   :subtype 4,
+   :size V,
    :secondaries
-   ({:secondaries (),
-     :name "Dawn",
+   ({:orbit 2,
+     :secondaries (),
+     :name "Eodore",
      :is-primary? false,
      :type F,
-     :subtype 7,
-     :size D})})
+     :subtype 8,
+     :size D})}
+  {:orbits
+   {0 :inner, 1 :inner, 2 :habitable, 3 :outer, 4 :outer, 5 :outer},
+   :name "Roze",
+   :is-primary? true,
+   :type K,
+   :subtype 1,
+   :size V,
+   :secondaries ()}
+  {:orbits
+   {0 :habitable,
+    1 :outer,
+    2 :outer,
+    3 :outer,
+    4 :outer,
+    5 :outer,
+    6 :outer},
+   :name "Uane",
+   :is-primary? true,
+   :type K,
+   :subtype 8,
+   :size V,
+   :secondaries ()}
+  {:orbits
+   {0 :inner,
+    1 :inner,
+    2 :inner,
+    3 :inner,
+    4 :inner,
+    5 :inner,
+    6 :habitable,
+    7 :outer,
+    8 :outer,
+    9 :outer,
+    10 :outer},
+   :name "Rcarlos",
+   :is-primary? true,
+   :type G,
+   :subtype 2,
+   :size III,
+   :secondaries
+   ({:orbit 3,
+     :secondaries (),
+     :name "Alter",
+     :is-primary? false,
+     :type F,
+     :subtype 3,
+     :size V})}
+  {:orbits
+   {0 :inner,
+    1 :inner,
+    2 :habitable,
+    3 :outer,
+    4 :outer,
+    5 :outer,
+    6 :outer,
+    7 :outer},
+   :name "Sumu",
+   :is-primary? true,
+   :type K,
+   :subtype 0,
+   :size V,
+   :secondaries ()}
+  {:orbits
+   {0 :habitable, 1 :outer, 2 :outer, 3 :outer, 4 :outer, 5 :outer},
+   :name "Rnie",
+   :is-primary? true,
+   :type M,
+   :subtype 3,
+   :size V,
+   :secondaries
+   ({:orbit 7,
+     :secondaries (),
+     :name "Uchi",
+     :is-primary? false,
+     :type F,
+     :subtype 2,
+     :size D})}
+  {:orbits {0 :inner, 1 :inner, 2 :inner, 3 :habitable, 4 :outer},
+   :name "Adley",
+   :is-primary? true,
+   :type G,
+   :subtype 4,
+   :size V,
+   :secondaries ()})
