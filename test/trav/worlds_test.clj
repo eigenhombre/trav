@@ -40,6 +40,9 @@
     zone-set =not=> (contains :inside-star)))
 
 
+(future-fact "Secondaries / companions have orbits, too.")
+
+
 (fact "Some orbits are empty/unavailable"
   (->> make-system
        repeatedly
@@ -50,4 +53,35 @@
        set) => (contains false))
 
 
-(future-fact "Some stars have captured planets")
+(fact "Some stars have captured planets"
+  (->> make-system
+       repeatedly
+       (map :orbits)
+       (mapcat keys)
+       (take 100)
+       (remove integer?)) =not=> [])
+
+
+(defn- average [s]
+  (let [[n sum] (reduce (fn [[c x] [c0 x0]] [(+ c c0) (+ x x0)])
+                        (map vector (repeat 1) s))]
+    (/ sum n)))
+
+
+(fact "Avg. number of gas giants should be 3.3 or so"
+  (->> make-system
+       repeatedly
+       (map :num-gg)
+       (take 100)
+       average
+       double) => (roughly 3.3 0.3))
+
+
+(fact "Secondaries should have gas giants, too."
+  (->> make-system
+       repeatedly
+       (mapcat :secondaries)
+       (map :num-gg)
+       (take 100)
+       average
+       double) => (roughly 3.3 0.3))

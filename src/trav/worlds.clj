@@ -88,10 +88,26 @@
   r7-12  1)
 
 
+(def-range-table have-empty-orbits
+  r1-4 no
+  r5-6 yes)
+
+
 (def-range-table num-empty-orbits
   r1-2 1
   3    2
   r4-6 3)
+
+
+(def-range-table have-captured-planets
+  r1-4 no
+  r5-6 yes)
+
+
+(def-range-table num-captured-planets
+  r1-2 1
+  r3-4 2
+  r5-6 3)
 
 
 (def-zone-table size-Ia
@@ -377,19 +393,69 @@
        keys))
 
 
-(defn prune-orbits [star]
-  (if (= 0 (rand-int 3))
-    (loop [star star
-           ne (num-empty-orbits (d 1))]
-      (let [orbs (available-orbit-numbers star)]
-        (cond (zero? ne) star
-              (empty? orbs) star
-              :else (recur (assoc-in star [:orbits
-                                           (rand-nth orbs)
-                                           :available]
-                                     false)
-                           (dec ne)))))
-    star))
+(defn capture-and-empty-table-dm [star]
+  (if (#{'B 'A} (:type star))
+    1
+    0))
+
+
+(defn prune-orbits
+  "
+  Remove some orbits, sometimes, based on *-empty-orbits tables,
+  above.  We deviate from the rules slightly by choosing at random
+  which orbit to delete, rather than rolling (and probably re-rolling)
+  2D.  This shifts the probability slightly but I see no reason to
+  follow a weighted-in-the-middle distribution for this.
+  "
+  [star]
+  (let [dm (capture-and-empty-table-dm star)]
+    (if (= (bracketed-lookup have-empty-orbits
+                             (+ (d 1) dm))
+           'yes)
+      (loop [star star
+             ne (bracketed-lookup num-empty-orbits
+                                  (+ (d 1) dm))]
+        (let [orbs (available-orbit-numbers star)]
+          (cond (zero? ne) star
+                (empty? orbs) star
+                :else (recur (assoc-in star [:orbits
+                                             (rand-nth orbs)
+                                             :available]
+                                       false)
+                             (dec ne)))))
+      star)))
+
+
+(defn captured-orbit-details [{:keys [size type subtype]}]
+  (let [whole-orbit (d)
+        zone (lookup-zone size type subtype whole-orbit)]
+    {(-> whole-orbit
+         (+ (* 0.1 (- (d) 7))))
+     {:available true
+      :zone zone}}))
+
+
+(defn add-capture-orbits [star]
+  (let [dm (capture-and-empty-table-dm star)]
+    (if (= (bracketed-lookup have-captured-planets
+                             (+ (d 1) dm)))
+      (let [nc (bracketed-lookup num-captured-planets
+                                 (+ (d 1) dm))]
+        (update-in star [:orbits] merge
+                   (->> (partial captured-orbit-details star)
+                        (repeatedly nc)
+                        (reduce merge))))
+      star)))
+
+
+(defn determine-gas-giant-qty [star]
+  (let [num-gg (if-not (= (gas-giant-present (d)))
+                 0
+                 (gas-giant-qty (d)))]
+    (-> star
+        (assoc :num-gg num-gg)
+        (assoc :secondaries
+          (map determine-gas-giant-qty (:secondaries star))))))
 
 
 (defn make-system []
@@ -397,7 +463,9 @@
       name-system
       orbits
       place-companions
-      prune-orbits))
+      prune-orbits
+      add-capture-orbits
+      determine-gas-giant-qty))
 
 
 (defn format-star [{:keys [is-primary?
@@ -422,201 +490,222 @@
             (remove empty?)))
 
 ;;=>
-'(["Primary    Pike       M4 V"]
-  ["Primary    Arek       M7 V"]
-  ["Primary    Uliet      K3 V"]
-  ["Primary    Cilia      M1 V"]
-  ("Companion  Cheal      F3 D")
-  ["Primary    Arek       M1 V"]
-  ("Companion  Cher       F9 D")
-  ["Primary    Iver       M9 VI"]
-  ["Primary    Msey       K6 V"]
-  ["Primary    Achim      M9 V"]
-  ["Primary    Arin       M8 V"]
-  ["Primary    Illy       M4 V"]
-  ("Companion  Rtmann     G4 D")
-  ["Primary    Olfe       G0 V"]
-  ["Primary    Yant       K0 VI"]
-  ["Primary    Hiroyuki   M7 V"]
-  ["Primary    Jinny      M3 III"]
-  ["Primary    Tewart     M8 VI"])
+'(["Primary    Nifer      M0 V"]
+  ["Primary    Alejandrea M9 V"]
+  ["Primary    Akash      M6 V"]
+  ["Primary    Ragnar     F2 V"]
+  ["Primary    Kimmo      M3 V"]
+  ["Primary    Hall       M9 III"]
+  ["Primary    Leads      M7 V"]
+  ["Primary    Nrichael   K1 V"]
+  ("Companion  Inley      F4 D")
+  ["Primary    Olis       K4 V"]
+  ["Primary    Rgaret     G9 IV"]
+  ["Primary    Slartin    M2 V"]
+  ["Primary    Christie   M3 V"]
+  ["Primary    Driannette K6 V"]
+  ("Companion  Arvey      F6 D")
+  ["Primary    Ucifer     G8 V"]
+  ["Primary    Incenzo    M6 VI"]
+  ("Companion  Neal       F7 D"))
+
 
 
 (evalq (->> make-system
             repeatedly
             (take 10)))
 
-
 ;;=>
-'({:orbits
-   {3 {:zone :outer, :available false},
-    2 {:zone :outer, :available false},
-    1 {:zone :outer, :available false},
-    0 {:zone :outer, :available true}},
-   :name "Leila",
+'({:num-gg 3,
+   :orbits {5.3 {:available true, :zone :outer}},
+   :name "Ford",
    :is-primary? true,
    :type M,
-   :subtype 2,
-   :size D,
-   :secondaries ()}
-  {:orbits
-   {6 {:zone :outer, :available false},
-    5 {:zone :outer, :available true},
-    4 {:zone :habitable, :available false},
-    3 {:zone :inner, :available true},
-    2 {:zone :inner, :available true},
-    1 {:zone :inner, :available false},
-    0 {:zone :inner, :available true}},
-   :name "Anny",
-   :is-primary? true,
-   :type F,
-   :subtype 8,
+   :subtype 7,
    :size V,
-   :secondaries ()}
-  {:orbits
+   :secondaries
+   ({:num-gg 4,
+     :orbit 2,
+     :secondaries (),
+     :name "Urence",
+     :is-primary? false,
+     :type F,
+     :subtype 8,
+     :size D})}
+  {:num-gg 3,
+   :orbits
    {0 {:zone :inner, :available true},
+    6.0 {:available true, :zone :outer},
+    3.8 {:available true, :zone :outer},
     7 {:zone :outer, :available true},
     1 {:zone :inner, :available true},
-    4 {:zone :inner, :available false},
-    6 {:zone :habitable, :available true},
-    3 {:zone :inner, :available true},
-    12 {:zone :outer, :available true},
-    2 {:zone :inner, :available true},
-    11 {:zone :outer, :available true},
-    9 {:zone :outer, :available true},
-    5 {:zone :inner, :available true},
-    10 {:zone :outer, :available true},
-    8 {:zone :outer, :available true}},
-   :name "Irotoshi",
-   :is-primary? true,
-   :type F,
-   :subtype 1,
-   :size III,
-   :secondaries
-   ({:orbit 11,
-     :secondaries (),
-     :name "Pedro",
-     :is-primary? false,
-     :type F,
-     :subtype 1,
-     :size V})}
-  {:orbits
-   {5 {:zone :outer, :available true},
     4 {:zone :outer, :available true},
-    3 {:zone :habitable, :available true},
-    2 {:zone :inner, :available true},
-    1 {:zone :inner, :available true},
-    0 {:zone :inner, :available true}},
-   :name "Acey",
+    6 {:zone :outer, :available true},
+    3 {:zone :outer, :available true},
+    2 {:zone :habitable, :available true},
+    5 {:zone :outer, :available true}},
+   :name "Ustina",
    :is-primary? true,
    :type G,
-   :subtype 0,
+   :subtype 5,
    :size V,
    :secondaries
-   ({:orbit 11,
+   ({:num-gg 5,
+     :orbit 1,
      :secondaries (),
-     :name "Riann",
+     :name "Jeremy",
      :is-primary? false,
      :type F,
-     :subtype 5,
+     :subtype 3,
      :size D})}
-  {:orbits
-   {6 {:zone :outer, :available true},
+  {:num-gg 1,
+   :orbits
+   {6.4 {:available true, :zone :outer},
+    10.9 {:available true, :zone :outer},
     5 {:zone :outer, :available true},
     4 {:zone :outer, :available true},
     3 {:zone :outer, :available true},
     2 {:zone :habitable, :available true},
-    1 {:zone :inner, :available false},
+    1 {:zone :inner, :available true},
     0 {:zone :inner, :available true}},
-   :name "Knudsen",
+   :name "Woody",
    :is-primary? true,
-   :type G,
-   :subtype 3,
-   :size VI,
-   :secondaries ()}
-  {:orbits
-   {1 {:zone :outer, :available true},
-    0 {:zone :habitable, :available true}},
-   :name "Rcel",
-   :is-primary? true,
-   :type M,
-   :subtype 3,
+   :type K,
+   :subtype 2,
    :size V,
-   :secondaries
-   ({:orbit 10,
-     :secondaries (),
-     :name "Erdar",
-     :is-primary? false,
-     :type F,
-     :subtype 9,
-     :size D})}
-  {:orbits
-   {4 {:zone :habitable, :available true},
+   :secondaries ()}
+  {:num-gg 3,
+   :orbits
+   {8.2 {:available true, :zone :outer},
+    4 {:zone :habitable, :available false},
     3 {:zone :inner, :available true},
     2 {:zone :inner, :available true},
     1 {:zone :inner, :available true},
-    0 {:zone :inner, :available true}},
-   :name "Eckie",
+    0 {:zone :inner, :available false}},
+   :name "Nick",
+   :is-primary? true,
+   :type K,
+   :subtype 1,
+   :size IV,
+   :secondaries
+   ({:num-gg 3,
+     :orbit 10,
+     :secondaries (),
+     :name "Anche",
+     :is-primary? false,
+     :type F,
+     :subtype 7,
+     :size D})}
+  {:num-gg 4,
+   :orbits
+   {9.1 {:available true, :zone :outer},
+    5.7 {:available true, :zone :outer},
+    2.2 {:available true, :zone :outer},
+    3 {:zone :outer, :available true},
+    2 {:zone :outer, :available true},
+    1 {:zone :outer, :available true},
+    0 {:zone :habitable, :available true}},
+   :name "Plastic",
+   :is-primary? true,
+   :type M,
+   :subtype 0,
+   :size V,
+   :secondaries
+   ({:num-gg 3,
+     :orbit 9,
+     :secondaries (),
+     :name "Owell",
+     :is-primary? false,
+     :type F,
+     :subtype 3,
+     :size D})}
+  {:num-gg 5,
+   :orbits
+   {8.3 {:available true, :zone :outer},
+    0 {:zone :outer, :available true}},
+   :name "Darrett",
+   :is-primary? true,
+   :type M,
+   :subtype 8,
+   :size V,
+   :secondaries ()}
+  {:num-gg 1,
+   :orbits
+   {0 {:zone :inner, :available true},
+    10.1 {:available true, :zone :outer},
+    7.0 {:available true, :zone :outer},
+    7.9 {:available true, :zone :outer},
+    7 {:zone :outer, :available true},
+    1 {:zone :inner, :available true},
+    4 {:zone :habitable, :available true},
+    6 {:zone :outer, :available false},
+    3 {:zone :inner, :available true},
+    2 {:zone :inner, :available true},
+    5 {:zone :outer, :available false},
+    8 {:zone :outer, :available false}},
+   :name "Nakumar",
    :is-primary? true,
    :type F,
    :subtype 5,
    :size V,
    :secondaries
-   ({:orbit 8,
+   ({:num-gg 4,
+     :orbit 3,
      :secondaries (),
-     :name "Erik",
+     :name "Geant",
      :is-primary? false,
      :type F,
-     :subtype 2,
-     :size D}
-    {:orbit 7,
-     :secondaries (),
-     :name "Raham",
-     :is-primary? false,
-     :type F,
-     :subtype 9,
+     :subtype 6,
      :size D})}
-  {:orbits
-   {7 {:zone :outer, :available true},
-    6 {:zone :outer, :available true},
+  {:num-gg 4,
+   :orbits
+   {9.9 {:available true, :zone :outer},
+    5.9 {:available true, :zone :outer},
     5 {:zone :outer, :available true},
     4 {:zone :outer, :available true},
     3 {:zone :outer, :available true},
     2 {:zone :outer, :available true},
     1 {:zone :outer, :available true},
     0 {:zone :outer, :available true}},
-   :name "Ilya",
+   :name "Alton",
    :is-primary? true,
    :type M,
    :subtype 7,
    :size V,
    :secondaries ()}
-  {:orbits
-   {5 {:zone :outer, :available true},
+  {:num-gg 3,
+   :orbits
+   {0 {:zone :inner, :available true},
+    4.1 {:available true, :zone :outer},
+    5.9 {:available true, :zone :outer},
+    7 {:zone :outer, :available true},
+    1 {:zone :inner, :available true},
     4 {:zone :outer, :available true},
+    6 {:zone :outer, :available true},
     3 {:zone :outer, :available true},
+    2 {:zone :habitable, :available true},
+    9 {:zone :outer, :available true},
+    5 {:zone :outer, :available true},
+    8 {:zone :outer, :available true}},
+   :name "Anya",
+   :is-primary? true,
+   :type G,
+   :subtype 8,
+   :size V,
+   :secondaries ()}
+  {:num-gg 3,
+   :orbits
+   {5.7 {:available true, :zone :outer},
+    8.6 {:available true, :zone :outer},
+    4 {:zone :outer, :available false},
+    3 {:zone :outer, :available false},
     2 {:zone :outer, :available true},
-    1 {:zone :outer, :available true},
-    0 {:zone :habitable, :available true}},
-   :name "Rson",
+    1 {:zone :outer, :available false},
+    0 {:zone :outer, :available true}},
+   :name "Etin",
    :is-primary? true,
-   :type M,
-   :subtype 3,
-   :size V,
-   :secondaries
-   ({:orbit 5,
-     :secondaries (),
-     :name "Ippe",
-     :is-primary? false,
-     :type M,
-     :subtype 8,
-     :size D})}
-  {:orbits
-   {1 {:zone :outer, :available true},
-    0 {:zone :habitable, :available true}},
-   :name "Jeev",
-   :is-primary? true,
-   :type M,
-   :subtype 3,
-   :size V,
+   :type K,
+   :subtype 9,
+   :size D,
    :secondaries ()})
+
