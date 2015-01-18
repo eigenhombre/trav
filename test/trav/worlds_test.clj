@@ -4,6 +4,7 @@
 
 
 (facts "About zone tables"
+  (-> size-Ia (get 11) (get 'F5)) => 'H
   (lookup-zone 'V 'B 0 -1) => :scorched
   (lookup-zone 'V 'B 0 0) => :scorched
   (lookup-zone 'V 'B 0 11) => :inner
@@ -18,16 +19,35 @@
 
 
 (fact "Secondary orbits never occur INSIDE primary stars"
+  (let [zone-set
+        (->> make-system
+             repeatedly
+             ;; Only choose ones that have inside-star orbital zones
+             (filter (comp (partial some #{:inside-star})
+                           (partial map :zone)
+                           vals
+                           :orbits))
+             ;; Make sure there are secondaries
+             (filter (comp seq :secondaries))
+             (take 20)
+             ;; Compare orbits of secondaries with primary orbital zones
+             (mapcat (fn [star]
+                       (for [s (:secondaries star)]
+                         (-> star :orbits (get (:orbit s))))))
+             ;; Make sure none are inside primary star.
+             (into #{}))]
+    zone-set (contains :habitable)
+    zone-set =not=> (contains :inside-star)))
+
+
+(fact "Some orbits are empty/unavailable"
   (->> make-system
        repeatedly
-       ;; Only choose ones that have inside-star orbital zones
-       (filter (comp (partial some #{:inside-star}) vals :orbits))
-       ;; Make sure there are secondaries
-       (filter (comp seq :secondaries))
-       (take 20)
-       ;; Compare orbits of secondaries with primary orbital zones
-       (mapcat (fn [star]
-              (for [s (:secondaries star)]
-                (-> star :orbits (get (:orbit s))))))
-       ;; Make sure none are inside primary star.
-       (into #{})) =not=> (contains :inside-star))
+       (map :orbits)
+       (mapcat vals)
+       (map :available)
+       (take 100)
+       set) => (contains false))
+
+
+(future-fact "Some stars have captured planets")

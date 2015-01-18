@@ -88,6 +88,12 @@
   r7-12  1)
 
 
+(def-range-table num-empty-orbits
+  r1-2 1
+  3    2
+  r4-6 3)
+
+
 (def-zone-table size-Ia
       B0 B5 A0 A5 F0 F5 G0 G5 K0 K5 M0 M5 M9
   1   -- --  -  -  -  -  -  -  -  -  -  -  -
@@ -213,15 +219,6 @@
  4    O  O  O  O  O  O)
 
 
-(evalq
- (-> size-Ia
-     (get 11)
-     (get 'F5)))
-
-;;=>
-'H
-
-
 (defn- round-for-table [n]
   (* (int (/ n 5)) 5))
 
@@ -246,7 +243,9 @@
     (let [table-for-size (->> size (str "size-") symbol eval)
           available-orbits (keys table-for-size)
           [min-orbit max-orbit] (apply (juxt min max) available-orbits)
-          row (max (min max-orbit orbit) min-orbit)
+          row (->> orbit
+                   (min max-orbit)
+                   (max min-orbit))
           subtable (table-for-size row)
           typesym #(symbol (str %1 %2))
           ;; Handle last column, e.g. M9:
@@ -258,7 +257,11 @@
       (-> k subtable zone-sym-to-kw))))
 
 
-(defn roll-within-range [table roll]
+(defn bracketed-lookup
+  "
+  Look up <roll> in <table>, handling over/underflows gracefully.
+  "
+  [table roll]
   (let [ks (keys table)
         [max-key min-key] (apply (juxt max min) (keys table))]
     (->> roll
@@ -268,7 +271,7 @@
 
 
 (defn- get-size-for-type [table type subtype size-roll]
-  (let [s0 (roll-within-range table size-roll)]
+  (let [s0 (bracketed-lookup table size-roll)]
     (cond
      (and (= s0 'IV)
           (or (and (= type 'K)
@@ -304,7 +307,7 @@
       :secondaries secondaries}))
   ([prev-type-roll prev-size-roll]
    (let [type-roll (+ prev-type-roll (d))
-         type (roll-within-range primary-type type-roll)
+         type (bracketed-lookup primary-type type-roll)
          subtype (rand-int 10)
          size-roll (+ prev-size-roll (d))]
      {:is-primary? false
@@ -319,27 +322,24 @@
       (assoc :secondaries (map name-system (:secondaries sys)))))
 
 
-(defn orbit-is-inside-star [{:keys [size type subtype] :as star} orbit]
-  (= (lookup-zone size type subtype orbit) :inside-star))
-
-
-(defn orbits [{:keys [size type subtype] :as sys}]
+(defn orbits [{:keys [size type subtype] :as star}]
   (let [max-orbit (-> (d 2)
-                      (+ (condp = (:size sys)
+                      (+ (condp = (:size star)
                            'III 4
                            'Ia  8
                            'Ib  8
                            'II  8
                            0))
-                      (+ (condp = (:type sys)
+                      (+ (condp = (:type star)
                            'M -4
                            'K -2
                            0)))
         orbits (-> max-orbit inc range)]
     (->> orbits
-         (map (partial lookup-zone size type subtype))
+         (map (fn [o] {:zone (lookup-zone size type subtype o)
+                       :available true}))
          (zipmap orbits)
-         (assoc sys :orbits))))
+         (assoc star :orbits))))
 
 
 (defn- expand-dm-field [orbit-lookup-result]
@@ -348,13 +348,17 @@
               orbit-lookup-result))
 
 
+(defn orbit-is-inside-star [{:keys [size type subtype] :as star} orbit]
+  (= (lookup-zone size type subtype orbit) :inside-star))
+
+
 (defn place-companions [{:keys [secondaries
                                 orbits] :as star}]
   (letfn [(set-orbit [n companion]
             (let [comp-orbit
                   (->> (d)
                        (+ (* n 4)) ;; Second companion generally further out
-                       (roll-within-range companion-orbit)
+                       (bracketed-lookup companion-orbit)
                        expand-dm-field)
 
                   orbit (cond
@@ -366,158 +370,253 @@
            (map-indexed set-orbit secondaries))))
 
 
+(defn available-orbit-numbers [star]
+  (->> star
+       :orbits
+       (filter (comp (partial = true) :available second))
+       keys))
+
+
+(defn prune-orbits [star]
+  (if (= 0 (rand-int 3))
+    (loop [star star
+           ne (num-empty-orbits (d 1))]
+      (let [orbs (available-orbit-numbers star)]
+        (cond (zero? ne) star
+              (empty? orbs) star
+              :else (recur (assoc-in star [:orbits
+                                           (rand-nth orbs)
+                                           :available]
+                                     false)
+                           (dec ne)))))
+    star))
+
+
 (defn make-system []
   (-> (starting-system)
       name-system
       orbits
-      place-companions))
+      place-companions
+      prune-orbits))
+
+
+(defn format-star [{:keys [is-primary?
+                           name
+                           size
+                           type
+                           subtype]}]
+  (format "%-10s %-10s %s%s %s"
+          (if is-primary? "Primary" "Companion")
+          name
+          type
+          subtype
+          size))
+
+
+(evalq (->> make-system
+            repeatedly
+            (take 15)
+            (mapcat (juxt (comp vector format-star)
+                          (comp (partial map format-star) :secondaries)))
+            concat
+            (remove empty?)))
+
+;;=>
+'(["Primary    Pike       M4 V"]
+  ["Primary    Arek       M7 V"]
+  ["Primary    Uliet      K3 V"]
+  ["Primary    Cilia      M1 V"]
+  ("Companion  Cheal      F3 D")
+  ["Primary    Arek       M1 V"]
+  ("Companion  Cher       F9 D")
+  ["Primary    Iver       M9 VI"]
+  ["Primary    Msey       K6 V"]
+  ["Primary    Achim      M9 V"]
+  ["Primary    Arin       M8 V"]
+  ["Primary    Illy       M4 V"]
+  ("Companion  Rtmann     G4 D")
+  ["Primary    Olfe       G0 V"]
+  ["Primary    Yant       K0 VI"]
+  ["Primary    Hiroyuki   M7 V"]
+  ["Primary    Jinny      M3 III"]
+  ["Primary    Tewart     M8 VI"])
 
 
 (evalq (->> make-system
             repeatedly
             (take 10)))
 
+
 ;;=>
 '({:orbits
-   {0 :habitable,
-    1 :outer,
-    2 :outer,
-    3 :outer,
-    4 :outer,
-    5 :outer,
-    6 :outer,
-    7 :outer},
-   :name "Rogue",
+   {3 {:zone :outer, :available false},
+    2 {:zone :outer, :available false},
+    1 {:zone :outer, :available false},
+    0 {:zone :outer, :available true}},
+   :name "Leila",
    :is-primary? true,
    :type M,
-   :subtype 4,
-   :size V,
+   :subtype 2,
+   :size D,
    :secondaries ()}
   {:orbits
-   {0 :inner,
-    1 :inner,
-    2 :habitable,
-    3 :outer,
-    4 :outer,
-    5 :outer,
-    6 :outer,
-    7 :outer},
-   :name "Henry",
+   {6 {:zone :outer, :available false},
+    5 {:zone :outer, :available true},
+    4 {:zone :habitable, :available false},
+    3 {:zone :inner, :available true},
+    2 {:zone :inner, :available true},
+    1 {:zone :inner, :available false},
+    0 {:zone :inner, :available true}},
+   :name "Anny",
    :is-primary? true,
-   :type G,
-   :subtype 6,
-   :size V,
-   :secondaries ()}
-  {:orbits
-   {0 :habitable, 1 :outer, 2 :outer, 3 :outer, 4 :outer, 5 :outer},
-   :name "Amanavendra",
-   :is-primary? true,
-   :type M,
-   :subtype 0,
-   :size V,
-   :secondaries ()}
-  {:orbits
-   {0 :habitable,
-    1 :outer,
-    2 :outer,
-    3 :outer,
-    4 :outer,
-    5 :outer,
-    6 :outer},
-   :name "Urevis",
-   :is-primary? true,
-   :type M,
-   :subtype 4,
-   :size V,
-   :secondaries
-   ({:orbit 2,
-     :secondaries (),
-     :name "Eodore",
-     :is-primary? false,
-     :type F,
-     :subtype 8,
-     :size D})}
-  {:orbits
-   {0 :inner, 1 :inner, 2 :habitable, 3 :outer, 4 :outer, 5 :outer},
-   :name "Roze",
-   :is-primary? true,
-   :type K,
-   :subtype 1,
-   :size V,
-   :secondaries ()}
-  {:orbits
-   {0 :habitable,
-    1 :outer,
-    2 :outer,
-    3 :outer,
-    4 :outer,
-    5 :outer,
-    6 :outer},
-   :name "Uane",
-   :is-primary? true,
-   :type K,
+   :type F,
    :subtype 8,
    :size V,
    :secondaries ()}
   {:orbits
-   {0 :inner,
-    1 :inner,
-    2 :inner,
-    3 :inner,
-    4 :inner,
-    5 :inner,
-    6 :habitable,
-    7 :outer,
-    8 :outer,
-    9 :outer,
-    10 :outer},
-   :name "Rcarlos",
+   {0 {:zone :inner, :available true},
+    7 {:zone :outer, :available true},
+    1 {:zone :inner, :available true},
+    4 {:zone :inner, :available false},
+    6 {:zone :habitable, :available true},
+    3 {:zone :inner, :available true},
+    12 {:zone :outer, :available true},
+    2 {:zone :inner, :available true},
+    11 {:zone :outer, :available true},
+    9 {:zone :outer, :available true},
+    5 {:zone :inner, :available true},
+    10 {:zone :outer, :available true},
+    8 {:zone :outer, :available true}},
+   :name "Irotoshi",
    :is-primary? true,
-   :type G,
-   :subtype 2,
+   :type F,
+   :subtype 1,
    :size III,
    :secondaries
-   ({:orbit 3,
+   ({:orbit 11,
      :secondaries (),
-     :name "Alter",
+     :name "Pedro",
      :is-primary? false,
      :type F,
-     :subtype 3,
+     :subtype 1,
      :size V})}
   {:orbits
-   {0 :inner,
-    1 :inner,
-    2 :habitable,
-    3 :outer,
-    4 :outer,
-    5 :outer,
-    6 :outer,
-    7 :outer},
-   :name "Sumu",
+   {5 {:zone :outer, :available true},
+    4 {:zone :outer, :available true},
+    3 {:zone :habitable, :available true},
+    2 {:zone :inner, :available true},
+    1 {:zone :inner, :available true},
+    0 {:zone :inner, :available true}},
+   :name "Acey",
    :is-primary? true,
-   :type K,
+   :type G,
    :subtype 0,
    :size V,
+   :secondaries
+   ({:orbit 11,
+     :secondaries (),
+     :name "Riann",
+     :is-primary? false,
+     :type F,
+     :subtype 5,
+     :size D})}
+  {:orbits
+   {6 {:zone :outer, :available true},
+    5 {:zone :outer, :available true},
+    4 {:zone :outer, :available true},
+    3 {:zone :outer, :available true},
+    2 {:zone :habitable, :available true},
+    1 {:zone :inner, :available false},
+    0 {:zone :inner, :available true}},
+   :name "Knudsen",
+   :is-primary? true,
+   :type G,
+   :subtype 3,
+   :size VI,
    :secondaries ()}
   {:orbits
-   {0 :habitable, 1 :outer, 2 :outer, 3 :outer, 4 :outer, 5 :outer},
-   :name "Rnie",
+   {1 {:zone :outer, :available true},
+    0 {:zone :habitable, :available true}},
+   :name "Rcel",
    :is-primary? true,
    :type M,
    :subtype 3,
    :size V,
    :secondaries
-   ({:orbit 7,
+   ({:orbit 10,
      :secondaries (),
-     :name "Uchi",
+     :name "Erdar",
+     :is-primary? false,
+     :type F,
+     :subtype 9,
+     :size D})}
+  {:orbits
+   {4 {:zone :habitable, :available true},
+    3 {:zone :inner, :available true},
+    2 {:zone :inner, :available true},
+    1 {:zone :inner, :available true},
+    0 {:zone :inner, :available true}},
+   :name "Eckie",
+   :is-primary? true,
+   :type F,
+   :subtype 5,
+   :size V,
+   :secondaries
+   ({:orbit 8,
+     :secondaries (),
+     :name "Erik",
      :is-primary? false,
      :type F,
      :subtype 2,
+     :size D}
+    {:orbit 7,
+     :secondaries (),
+     :name "Raham",
+     :is-primary? false,
+     :type F,
+     :subtype 9,
      :size D})}
-  {:orbits {0 :inner, 1 :inner, 2 :inner, 3 :habitable, 4 :outer},
-   :name "Adley",
+  {:orbits
+   {7 {:zone :outer, :available true},
+    6 {:zone :outer, :available true},
+    5 {:zone :outer, :available true},
+    4 {:zone :outer, :available true},
+    3 {:zone :outer, :available true},
+    2 {:zone :outer, :available true},
+    1 {:zone :outer, :available true},
+    0 {:zone :outer, :available true}},
+   :name "Ilya",
    :is-primary? true,
-   :type G,
-   :subtype 4,
+   :type M,
+   :subtype 7,
+   :size V,
+   :secondaries ()}
+  {:orbits
+   {5 {:zone :outer, :available true},
+    4 {:zone :outer, :available true},
+    3 {:zone :outer, :available true},
+    2 {:zone :outer, :available true},
+    1 {:zone :outer, :available true},
+    0 {:zone :habitable, :available true}},
+   :name "Rson",
+   :is-primary? true,
+   :type M,
+   :subtype 3,
+   :size V,
+   :secondaries
+   ({:orbit 5,
+     :secondaries (),
+     :name "Ippe",
+     :is-primary? false,
+     :type M,
+     :subtype 8,
+     :size D})}
+  {:orbits
+   {1 {:zone :outer, :available true},
+    0 {:zone :habitable, :available true}},
+   :name "Jeev",
+   :is-primary? true,
+   :type M,
+   :subtype 3,
    :size V,
    :secondaries ()})
