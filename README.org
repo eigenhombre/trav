@@ -3,9 +3,9 @@
 
 [[https://travis-ci.org/eigenhombre/trav.svg]]
 
-This repository contains Clojure libraries for generating random
-characters and star systems for [[http://en.wikipedia.org/wiki/Traveller_(role-playing_game)][Traveller]], a popular '80s-era science
-fiction role playing game (RPG) still being used today.
+Clojure libraries for generating random characters and star systems
+for [[http://en.wikipedia.org/wiki/Traveller_(role-playing_game)][Traveller]], a popular '80s-era science fiction role playing game
+(RPG) still being used today.
 
 In Traveller, players create characters who explore, trade, build, and
 fight in a universe created by a "referee" or game master.  Traveller
