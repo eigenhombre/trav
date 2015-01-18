@@ -1,20 +1,19 @@
-#+TITLE: trav - Traveller Character Generation in Clojure
+#+TITLE: Traveller Character and World Generation in Clojure
 #+OPTIONS: toc:nil num:nil
 
-Clojure functions for generating random characters (and eventually
-more) for [[http://en.wikipedia.org/wiki/Traveller_(role-playing_game)][Traveller]], a popular '80s-era role playing game
+Clojure functions for generating random characters and star systems
+for [[http://en.wikipedia.org/wiki/Traveller_(role-playing_game)][Traveller]], a popular '80s-era science fiction role playing game
 (RPG) still being used today.
 
 In Traveller, players create characters who explore, trade, build, and
 fight in a universe created by a "referee" or game master.  Traveller
-has many versions; [[http://en.wikipedia.org/wiki/Traveller_(role-playing_game)#Traveller_.281977.2C_GDW.29][Classic Traveller]] is the version I'm most familiar
-with, and it remains many people's favorite version.  Classic
-Traveller was produced in the 1980s as a series of "Little Black
-Books" (LBBs) -- 3 core books, plus a series of rule expansions,
-playing scenarios, and related data.
+has many versions; [[http://en.wikipedia.org/wiki/Traveller_(role-playing_game)#Traveller_.281977.2C_GDW.29][Classic Traveller]] was the first, and it remains
+many people's favorite.  It was produced in the 1980s as a series of
+"Little Black Books" (LBBs) -- 3 core books, plus a series of rule
+expansions, playing scenarios, and related data.
 
 The code here can be used (so far) for character generation; see
-[[Usage]], below.  System generation functionality is in progress!
+[[Usage]], below.  Star system generation functionality is in progress!
 
 * Why?
 
@@ -43,17 +42,21 @@ probably all change.
   - Skill awards
   - Mustering out benefits (pay, gear, memberships, pension)
   - Standard formatting, incl. UPPs and skills
+- Preliminary work on system generation à la "Scouts" (LBB #6).
+  - Stellar type, subtype, and size determination
+  - Generation of available orbits in inner, outer and habitable zones
+  - Generation of captured planetary orbits
 
 ** What's Next
 
-Full system generation à la "Scouts" (LBB #6).
+Finish star system generation.
 
 ** Future Ideas
 
 *** Simulation ideas
 - Monte Carlo questions:
   - What is the average survival rate during character generation?
-  - What strategy optimizes this?
+  - What strategies balance high survival rate + high skill levels?
   - What is the averge number of credits received during mustering out?
   - Which skills are most common (depends on service duration, survivability, etc.)?
 *** Other Generators
