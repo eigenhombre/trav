@@ -1,9 +1,11 @@
-#+TITLE: Traveller Character and World Generation in Clojure
+#+TITLE: trav
 #+OPTIONS: toc:nil num:nil
 
-Clojure functions for generating random characters and star systems
-for [[http://en.wikipedia.org/wiki/Traveller_(role-playing_game)][Traveller]], a popular '80s-era science fiction role playing game
-(RPG) still being used today.
+* Traveller Character and World Generation in Clojure
+
+This repository contains Clojure libraries for generating random
+characters and star systems for [[http://en.wikipedia.org/wiki/Traveller_(role-playing_game)][Traveller]], a popular '80s-era science
+fiction role playing game (RPG) still being used today.
 
 In Traveller, players create characters who explore, trade, build, and
 fight in a universe created by a "referee" or game master.  Traveller
@@ -17,15 +19,18 @@ The code here can be used (so far) for character generation; see
 
 * Why?
 
-- To experiment with using [[https://github.com/eigenhombre/trav/blob/master/src/trav/chars.clj#L85][small DSLs]] to represent RPG rules and tables
-- To indulge an ancient fascination with
+- To experiment with using [[https://github.com/eigenhombre/trav/blob/master/src/trav/chars.clj#L85][small DSLs]] to represent RPG rules and
+  tables.  This is something Clojure (or any Lisp) is very good at,
+  and which would be hard to do in a similar way in many other
+  languages;
+- To indulge my long-standing interests in
   - simulation
   - science fiction
-  - role playing games
+  - role playing games;
 - To see what kind of complex behaviors emerge out of the fairly
-  detailed rules provided by the game designer
-- To tune and refine my [[https://github.com/eigenhombre/namejen][Markov-chain-based Character Name Generator]]
-- As a launching point for other game experiments
+  detailed rules provided by the game designers;
+- To tune and refine my [[https://github.com/eigenhombre/namejen][Markov-chain-based Character Name Generator]];
+- As a launching point for other game experiments;
 - Because it's fun!
 
 * Status
