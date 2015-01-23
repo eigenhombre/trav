@@ -77,7 +77,7 @@
   r9-12  5)
 
 
-(def-range-table plantetoid-present
+(def-range-table planetoid-present
   r1-6   yes
   r7-12  no)
 
@@ -350,12 +350,14 @@
                            'M -4
                            'K -2
                            0)))
-        orbits (-> max-orbit inc range)]
-    (->> orbits
-         (map (fn [o] {:zone (lookup-zone size type subtype o)
-                       :available true}))
-         (zipmap orbits)
-         (assoc star :orbits))))
+        orbits-seq (range (inc max-orbit))
+        orbit-map (zipmap orbits-seq
+                          (map (fn [o] {:zone (lookup-zone size type subtype o)
+                                        :available true})
+                                 orbits-seq))]
+    (-> star
+        (assoc :orbits orbit-map)
+        (assoc :secondaries (map orbits (:secondaries star))))))
 
 
 (defn- expand-dm-field [orbit-lookup-result]
@@ -458,14 +460,25 @@
           (map determine-gas-giant-qty (:secondaries star))))))
 
 
+(defn determine-planetoid-qty [star]
+  (let [num-planetoids (if-not (= (planetoid-present (d)))
+                         0
+                         (planetoid-qty (d)))]
+    (-> star
+        (assoc :num-planetoids num-planetoids)
+        (assoc :secondaries
+          (map determine-planetoid-qty (:secondaries star))))))
+
+
 (defn make-system []
   (-> (starting-system)
       name-system
-      orbits
       place-companions
+      orbits
       prune-orbits
       add-capture-orbits
-      determine-gas-giant-qty))
+      determine-gas-giant-qty
+      determine-planetoid-qty))
 
 
 (defn format-star [{:keys [is-primary?

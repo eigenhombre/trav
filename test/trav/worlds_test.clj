@@ -40,7 +40,13 @@
     zone-set =not=> (contains :inside-star)))
 
 
-(future-fact "Secondaries / companions have orbits, too.")
+(fact "Secondaries / companions have orbits, too."
+  (->> make-system
+       repeatedly
+       (take 100)
+       (mapcat :secondaries)
+       (map :orbits)
+       count) => (roughly 50 10))
 
 
 (fact "Some orbits are empty/unavailable"
@@ -74,7 +80,7 @@
        (map :num-gg)
        (take 100)
        average
-       double) => (roughly 3.3 0.3))
+       double) => (roughly 3.26 0.40))
 
 
 (fact "Secondaries should have gas giants, too."
@@ -84,4 +90,13 @@
        (map :num-gg)
        (take 100)
        average
-       double) => (roughly 3.3 0.3))
+       double) => (roughly 3.26 0.40))
+
+
+(fact "Some stars have planetoid belts"
+    (->> make-system
+       repeatedly
+       (map :num-planetoids)
+       (take 100)
+       average
+       double) => (roughly 1.41 0.3))
