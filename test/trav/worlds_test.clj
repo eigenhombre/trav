@@ -46,7 +46,7 @@
        (take 100)
        (mapcat :secondaries)
        (map :orbits)
-       count) => (roughly 50 10))
+       count) => (roughly 50 20))
 
 
 (fact "Some orbits are empty/unavailable"
@@ -94,7 +94,7 @@
 
 
 (fact "Some stars have planetoid belts"
-    (->> make-system
+  (->> make-system
        repeatedly
        (map :num-planetoids)
        (take 100)

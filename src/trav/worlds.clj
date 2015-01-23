@@ -247,6 +247,10 @@
     'H :habitable} s))
 
 
+(defn zone-table-for-size [size]
+  (->> size (str "size-") symbol eval))
+
+
 (defn lookup-zone [size type subtype orbit]
   (if (= size 'D)  ;; Dwarf table is simple but has special column names:
     (zone-sym-to-kw
@@ -256,13 +260,13 @@
        'H
        'O))
     ;; Otherwise, figure out nearest appropriate row and column for lookup:
-    (let [table-for-size (->> size (str "size-") symbol eval)
-          available-orbits (keys table-for-size)
+    (let [zone-table (zone-table-for-size size)
+          available-orbits (keys zone-table)
           [min-orbit max-orbit] (apply (juxt min max) available-orbits)
           row (->> orbit
                    (min max-orbit)
                    (max min-orbit))
-          subtable (table-for-size row)
+          subtable (zone-table row)
           typesym #(symbol (str %1 %2))
           ;; Handle last column, e.g. M9:
           [nine-key] (filter (fn [k] (->> k str last (= \9)))
