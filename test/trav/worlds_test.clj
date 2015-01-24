@@ -3,6 +3,9 @@
             [midje.sweet :refer :all]))
 
 
+(defn- systems [] (repeatedly make-system))
+
+
 (facts "About zone tables"
   (-> size-Ia (get 11) (get 'F5)) => 'H
   (lookup-zone 'V 'B 0 -1) => :scorched
@@ -20,8 +23,7 @@
 
 (fact "Secondary orbits never occur INSIDE primary stars"
   (let [zone-set
-        (->> make-system
-             repeatedly
+        (->> (systems)
              ;; Only choose ones that have inside-star orbital zones
              (filter (comp (partial some #{:inside-star})
                            (partial map :zone)
@@ -41,8 +43,7 @@
 
 
 (fact "Secondaries / companions have orbits, too."
-  (->> make-system
-       repeatedly
+  (->> (systems)
        (take 100)
        (mapcat :secondaries)
        (map :orbits)
@@ -50,8 +51,7 @@
 
 
 (fact "Some orbits are empty/unavailable"
-  (->> make-system
-       repeatedly
+  (->> (systems)
        (map :orbits)
        (mapcat vals)
        (map :available)
@@ -60,8 +60,7 @@
 
 
 (fact "Some stars have captured planets"
-  (->> make-system
-       repeatedly
+  (->> (systems)
        (map :orbits)
        (mapcat keys)
        (take 100)
@@ -75,8 +74,7 @@
 
 
 (fact "Avg. number of gas giants should be 3.3 or so"
-  (->> make-system
-       repeatedly
+  (->> (systems)
        (map :num-gg)
        (take 100)
        average
@@ -84,8 +82,7 @@
 
 
 (fact "Secondaries should have gas giants, too."
-  (->> make-system
-       repeatedly
+  (->> (systems)
        (mapcat :secondaries)
        (map :num-gg)
        (take 100)
@@ -94,9 +91,37 @@
 
 
 (fact "Some stars have planetoid belts"
-  (->> make-system
-       repeatedly
+  (->> (systems)
        (map :num-planetoids)
        (take 100)
        average
        double) => (roughly 1.41 0.3))
+
+
+(facts "If a companion is present, certain restrictions on
+        available orbits exist."
+  (fact "In a system with companion in orbit 2, orbits 0 and 4 are available..."
+    (let [orbits
+          (->> (systems)
+               (filter (comp (partial = 1) count :secondaries))
+               (filter (comp (partial = 2) :orbit first :secondaries))
+               (mapcat :orbits)
+               (filter (comp true? :available second))
+               (map first)
+               (take 20))]
+      orbits => (contains 0)
+      orbits => (contains 4)
+      (fact "...but orbits 1, 2, 3 are not."
+        orbits =not=> (contains 1)
+        orbits =not=> (contains 2)
+        orbits =not=> (contains 3)))))
+
+
+(fact "Orbit numbers of orbits around the companion never exceed 1/2
+       the companion star's orbit number around the primary."
+  (->> (systems)
+       (mapcat :secondaries)
+       (map (juxt :orbit (comp keys :orbits)))
+       (filter (comp integer? first))
+       (take 100)
+       (every? (fn [[o os]] (>= o (apply max os))))) => true)
