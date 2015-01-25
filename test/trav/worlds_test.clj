@@ -73,21 +73,43 @@
     (/ sum n)))
 
 
-(fact "Avg. number of gas giants should be 3.3 or so"
-  (->> (systems)
-       (map :num-gg)
-       (take 100)
-       average
-       double) => (roughly 3.26 0.40))
+(defn- num-gg [s]
+  (->> s
+       :planets
+       (filter (comp (partial = 'GG) :type))
+       count))
 
 
-(fact "Secondaries should have gas giants, too."
+(facts "About GGs"
+  (let [several-systems (take 100 (systems))]
+    (fact "Avg. number of gas giants should be 3.3 or so"
+      (->> several-systems
+           (map num-gg)
+           average
+           double) => (roughly 3.2 0.5))
+
+    (fact "Secondaries should have gas giants, too."
+      (->> several-systems
+           (map num-gg)
+           average
+           double) => (roughly 3.2 0.5))
+
+    (fact "Gas giants have orbits"
+      (->> several-systems
+           (mapcat :planets)
+           (map :orbit)
+           (remove nil?)) =not=> ())))
+
+
+(fact "Planetary orbits are unique"
   (->> (systems)
-       (mapcat :secondaries)
-       (map :num-gg)
        (take 100)
-       average
-       double) => (roughly 3.26 0.40))
+       (map :planets)
+       (map (partial map :orbit))
+       ;; Only original, integer orbits:
+       (map (partial filter integer?))
+       (mapcat (comp vals frequencies))
+       (remove #{1})) => ())
 
 
 (fact "Some stars have planetoid belts"

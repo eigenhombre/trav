@@ -513,6 +513,52 @@
           (map determine-planetoid-qty (:secondaries star))))))
 
 
+(defn available-orbits [star]
+  (->> star
+       :orbits
+       (filter (comp :available second))))
+
+
+(defn gg-preferred-orbits
+  "
+  'While gas giants can be in inner orbits, they should not be placed
+  starward of the habitable zone unless there are no other orbits
+  available.'
+  "
+  [star]
+  (->> star
+       :orbits
+       (filter (comp :available second))
+       (filter (comp #{:outer :habitable} :zone second))))
+
+
+(defn place-ggs
+  "
+  Deviation from the rules: if no orbit is available, we discard the GG.
+  "
+  [{:keys [num-gg orbits] :as star}]
+  (if-not (pos? num-gg)
+    star
+    (let [preferred (gg-preferred-orbits star)
+          choices (if (seq preferred)
+                    preferred
+                    (available-orbits star))]
+      (-> (if (seq choices)
+            (let [choicenums (keys choices)
+                  o (rand-nth choicenums)]
+              (-> star
+                  (update-in [:planets] conj {:type 'GG
+                                              :name (generic-name)
+                                              :size (rand-nth [:small :large])
+                                              :orbit o})
+                  (assoc-in [:orbits o :available] false)))
+            star)
+          (update-in [:num-gg] dec)
+          (assoc :secondaries
+            (map place-ggs (:secondaries star)))
+          place-ggs))))
+
+
 (defn make-system []
   (-> (starting-system)
       name-system
@@ -522,7 +568,8 @@
       remove-orbits-screened-by-companions
       add-capture-orbits
       determine-gas-giant-qty
-      determine-planetoid-qty))
+      determine-planetoid-qty
+      place-ggs))
 
 
 (defn format-star [{:keys [is-primary?
@@ -573,232 +620,249 @@
             (take 10)))
 
 ;;=>
-'({:num-planetoids 1,
-   :num-gg 3,
-   :orbits
-   {4.9 {:available true, :zone :outer},
-    5.6 {:available true, :zone :outer},
-    7.2 {:available true, :zone :outer},
-    5 {:zone :outer, :available true},
-    4 {:zone :outer, :available true},
-    3 {:zone :outer, :available true},
-    2 {:zone :outer, :available true},
-    1 {:zone :outer, :available true},
-    0 {:zone :outer, :available false}},
-   :name "Ssell",
-   :is-primary? true,
+'({:secondaries (),
+   :planets
+   ({:type GG, :name "Sridhar", :size :large, :orbit 4}
+    {:type GG, :name "Nder", :size :small, :orbit 6}),
+   :num-gg 0,
+   :name "Frey",
    :type M,
-   :subtype 8,
-   :size V,
-   :secondaries ()}
-  {:num-planetoids 1,
-   :num-gg 1,
+   :size VI,
    :orbits
-   {8.3 {:available true, :zone :outer},
-    7 {:zone :outer, :available true},
-    6 {:zone :outer, :available true},
-    5 {:zone :outer, :available true},
-    4 {:zone :outer, :available true},
-    3 {:zone :outer, :available true},
-    2 {:zone :habitable, :available true},
-    1 {:zone :inner, :available true},
-    0 {:zone :inner, :available true}},
-   :name "Athnakumar",
-   :is-primary? true,
-   :type G,
-   :subtype 5,
-   :size V,
-   :secondaries ()}
-  {:num-planetoids 1,
-   :num-gg 3,
-   :orbits
-   {0 {:zone :inner, :available true},
-    9.0 {:available true, :zone :outer},
-    7 {:zone :outer, :available false},
-    1 {:zone :inner, :available true},
-    4 {:zone :outer, :available true},
+   {7.8 {:available true, :zone :outer},
+    5.7 {:available true, :zone :outer},
     6 {:zone :outer, :available false},
-    3 {:zone :habitable, :available true},
-    2 {:zone :inner, :available true},
-    9 {:zone :outer, :available false},
-    5 {:zone :outer, :available false},
-    10 {:zone :outer, :available false},
-    8 {:zone :outer, :available false}},
-   :name "Joseph",
-   :is-primary? true,
-   :type G,
-   :subtype 0,
-   :size V,
-   :secondaries
-   ({:secondaries (),
-     :num-gg 4,
-     :orbit 10,
-     :name "Jesper",
-     :type F,
-     :size D,
-     :orbits
-     {3 {:zone :outer, :available true},
-      2 {:zone :outer, :available true},
-      1 {:zone :outer, :available true},
-      0 {:zone :outer, :available true}},
-     :num-planetoids 2,
-     :is-primary? false,
-     :subtype 7})}
-  {:num-planetoids 1,
-   :num-gg 3,
-   :orbits
-   {0 {:zone :inner, :available true},
-    9.2 {:available true, :zone :outer},
-    10.9 {:available true, :zone :outer},
-    7 {:zone :outer, :available true},
-    1 {:zone :inner, :available true},
-    4 {:zone :inner, :available true},
-    6 {:zone :habitable, :available true},
-    3 {:zone :inner, :available true},
-    2 {:zone :inner, :available true},
-    11 {:zone :outer, :available true},
-    9 {:zone :outer, :available true},
-    5 {:zone :inner, :available true},
-    10 {:zone :outer, :available true},
-    8 {:zone :outer, :available true}},
-   :name "Olson",
-   :is-primary? true,
-   :type A,
-   :subtype 6,
-   :size V,
-   :secondaries ()}
-  {:num-planetoids 1,
-   :num-gg 1,
-   :orbits
-   {8.2 {:available true, :zone :outer},
-    3.1 {:available true, :zone :outer},
-    8.5 {:available true, :zone :outer},
+    5 {:zone :outer, :available true},
+    4 {:zone :outer, :available false},
     3 {:zone :outer, :available true},
     2 {:zone :outer, :available true},
     1 {:zone :outer, :available true},
     0 {:zone :outer, :available true}},
-   :name "Miltos",
+   :num-planetoids 2,
    :is-primary? true,
-   :type M,
-   :subtype 6,
-   :size V,
-   :secondaries
+   :subtype 7}
+  {:secondaries
    ({:secondaries (),
-     :num-gg 1,
-     :orbit 14,
-     :name "Anice",
+     :planets
+     ({:type GG, :name "Tefan", :size :small, :orbit 3}
+      {:type GG, :name "Inhard", :size :large, :orbit 1}
+      {:type GG, :name "Entonella", :size :small, :orbit 0}
+      {:type GG, :name "Gunter", :size :large, :orbit 2}),
+     :num-gg 0,
+     :orbit 6,
+     :name "Iannette",
      :type F,
      :size D,
      :orbits
-     {7 {:zone :outer, :available true},
-      6 {:zone :outer, :available true},
-      5 {:zone :outer, :available true},
-      4 {:zone :outer, :available true},
-      3 {:zone :outer, :available true},
-      2 {:zone :outer, :available true},
-      1 {:zone :outer, :available true},
-      0 {:zone :outer, :available true}},
-     :num-planetoids 2,
+     {3 {:zone :outer, :available false},
+      2 {:zone :outer, :available false},
+      1 {:zone :outer, :available false},
+      0 {:zone :outer, :available false}},
+     :num-planetoids 1,
      :is-primary? false,
-     :subtype 4})}
-  {:num-planetoids 1,
-   :num-gg 2,
-   :orbits
-   {7.8 {:available true, :zone :outer},
-    0 {:zone :inner, :available true}},
-   :name "Arvey",
-   :is-primary? true,
-   :type K,
-   :subtype 4,
+     :subtype 6}),
+   :planets
+   ({:type GG, :name "Buck", :size :small, :orbit 1}
+    {:type GG, :name "Dennifer", :size :large, :orbit 9.5}
+    {:type GG, :name "Ocorrito", :size :small, :orbit 0}
+    {:type GG, :name "Eliza", :size :small, :orbit 5.4}),
+   :num-gg 0,
+   :name "Rtis",
+   :type M,
    :size V,
-   :secondaries ()}
-  {:num-planetoids 1,
-   :num-gg 5,
    :orbits
-   {5.9 {:available true, :zone :outer},
-    6 {:zone :outer, :available true},
-    5 {:zone :outer, :available true},
+   {9.5 {:available false, :zone :outer},
+    5.4 {:available false, :zone :outer},
+    1 {:zone :outer, :available false},
+    0 {:zone :habitable, :available false}},
+   :num-planetoids 2,
+   :is-primary? true,
+   :subtype 4}
+  {:secondaries
+   ({:secondaries (),
+     :planets ({:type GG, :name "Stic", :size :small, :orbit 0}),
+     :num-gg 0,
+     :orbit 1,
+     :name "Presley",
+     :type F,
+     :size D,
+     :orbits {0 {:zone :outer, :available false}},
+     :num-planetoids 1,
+     :is-primary? false,
+     :subtype 8}),
+   :planets
+   ({:type GG, :name "Icah", :size :large, :orbit 2}
+    {:type GG, :name "Igurd", :size :small, :orbit 9.1}
+    {:type GG, :name "Ienz", :size :large, :orbit 4}),
+   :num-gg 0,
+   :name "Rotoshi",
+   :type K,
+   :size VI,
+   :orbits
+   {9.1 {:available false, :zone :outer},
+    5 {:zone :outer, :available false},
+    4 {:zone :outer, :available false},
+    3 {:zone :outer, :available false},
+    2 {:zone :outer, :available false},
+    1 {:zone :habitable, :available false},
+    0 {:zone :inner, :available false}},
+   :num-planetoids 1,
+   :is-primary? true,
+   :subtype 2}
+  {:secondaries (),
+   :planets ({:type GG, :name "Vised", :size :small, :orbit 7.0}),
+   :num-gg 0,
+   :name "Pascal",
+   :type M,
+   :size V,
+   :orbits
+   {5.2 {:available true, :zone :outer},
+    7.0 {:available false, :zone :outer},
     4 {:zone :outer, :available true},
     3 {:zone :outer, :available true},
     2 {:zone :outer, :available true},
     1 {:zone :outer, :available true},
-    0 {:zone :habitable, :available true}},
-   :name "Rbuck",
+    0 {:zone :outer, :available true}},
+   :num-planetoids 2,
    :is-primary? true,
+   :subtype 7}
+  {:secondaries (),
+   :planets
+   ({:type GG, :name "Paula", :size :small, :orbit 2}
+    {:type GG, :name "Ofoklis", :size :small, :orbit 0}
+    {:type GG, :name "Ilner", :size :small, :orbit 10.0}),
+   :num-gg 0,
+   :name "Duane",
    :type M,
-   :subtype 0,
    :size V,
-   :secondaries ()}
-  {:num-planetoids 1,
-   :num-gg 2,
    :orbits
-   {0 {:zone :inside-star, :available true},
-    5.0 {:available true, :zone :inside-star},
-    8.7 {:available true, :zone :inner},
-    3.9 {:available true, :zone :inside-star},
-    7 {:zone :inner, :available true},
-    1 {:zone :inside-star, :available true},
-    4 {:zone :inside-star, :available true},
-    6 {:zone :inner, :available true},
-    3 {:zone :inside-star, :available false},
-    2 {:zone :inside-star, :available true},
-    9 {:zone :inner, :available true},
-    5 {:zone :inside-star, :available true},
-    8 {:zone :inner, :available true}},
-   :name "Entinos",
-   :is-primary? true,
-   :type M,
-   :subtype 5,
-   :size II,
-   :secondaries ()}
-  {:num-planetoids 1,
-   :num-gg 2,
-   :orbits
-   {0 {:zone :habitable, :available true},
-    5.1 {:available true, :zone :outer},
-    6.6 {:available true, :zone :outer},
-    7.2 {:available true, :zone :outer},
-    1 {:zone :outer, :available true},
-    4 {:zone :outer, :available false},
-    6 {:zone :outer, :available true},
-    3 {:zone :outer, :available false},
+   {10.0 {:available false, :zone :outer},
+    8.8 {:available true, :zone :outer},
+    6.5 {:available true, :zone :outer},
     2 {:zone :outer, :available false},
-    5 {:zone :outer, :available true}},
-   :name "Rajiv",
+    1 {:zone :outer, :available true},
+    0 {:zone :outer, :available false}},
+   :num-planetoids 2,
    :is-primary? true,
-   :type M,
-   :subtype 1,
+   :subtype 6}
+  {:secondaries (),
+   :planets
+   ({:type GG, :name "Jussi", :size :large, :orbit 5}
+    {:type GG, :name "Aire", :size :small, :orbit 11.0}),
+   :num-gg 0,
+   :name "Nacea",
+   :type F,
    :size V,
-   :secondaries
-   ({:secondaries (),
-     :num-gg 4,
-     :orbit 3,
-     :name "Mone",
-     :type F,
-     :size V,
-     :orbits
-     {1 {:zone :inner, :available true},
-      0 {:zone :inner, :available true}},
-     :num-planetoids 2,
-     :is-primary? false,
-     :subtype 2})}
-  {:num-planetoids 1,
-   :num-gg 3,
    :orbits
-   {0 {:zone :inner, :available true},
-    10.0 {:available true, :zone :outer},
-    7.3 {:available true, :zone :habitable},
-    3.1 {:available true, :zone :inner},
-    7 {:zone :habitable, :available true},
-    1 {:zone :inner, :available true},
+   {11.0 {:available false, :zone :outer},
+    5.5 {:available true, :zone :habitable},
+    5 {:zone :habitable, :available false},
     4 {:zone :inner, :available true},
-    6 {:zone :inner, :available true},
     3 {:zone :inner, :available true},
     2 {:zone :inner, :available true},
-    5 {:zone :inner, :available true}},
-   :name "Cole",
+    1 {:zone :inner, :available true},
+    0 {:zone :inner, :available true}},
+   :num-planetoids 1,
    :is-primary? true,
-   :type A,
-   :subtype 2,
+   :subtype 3}
+  {:secondaries
+   ({:secondaries (),
+     :planets ({:type GG, :name "Stopher", :size :small, :orbit 0}),
+     :num-gg 0,
+     :orbit 1,
+     :name "Mara",
+     :type F,
+     :size D,
+     :orbits {0 {:zone :outer, :available false}},
+     :num-planetoids 2,
+     :is-primary? false,
+     :subtype 2}),
+   :planets
+   ({:type GG, :name "Utoku", :size :small, :orbit 8}
+    {:type GG, :name "Nigel", :size :small, :orbit 9.5}
+    {:type GG, :name "Mary", :size :large, :orbit 6}
+    {:type GG, :name "Ahul", :size :large, :orbit 4}
+    {:type GG, :name "Rajiv", :size :small, :orbit 7}),
+   :num-gg 0,
+   :name "Enson",
+   :type F,
    :size V,
-   :secondaries ()})
+   :orbits
+   {0 {:zone :inner, :available false},
+    9.5 {:available false, :zone :outer},
+    7.6 {:available true, :zone :outer},
+    3.7 {:available true, :zone :habitable},
+    7 {:zone :outer, :available false},
+    1 {:zone :inner, :available false},
+    4 {:zone :habitable, :available false},
+    6 {:zone :outer, :available false},
+    3 {:zone :inner, :available true},
+    2 {:zone :inner, :available true},
+    9 {:zone :outer, :available false},
+    5 {:zone :outer, :available true},
+    10 {:zone :outer, :available false},
+    8 {:zone :outer, :available false}},
+   :num-planetoids 2,
+   :is-primary? true,
+   :subtype 5}
+  {:secondaries (),
+   :planets
+   ({:type GG, :name "Ericky", :size :small, :orbit 8}
+    {:type GG, :name "Arah", :size :large, :orbit 2}
+    {:type GG, :name "Susan", :size :small, :orbit 0}),
+   :num-gg 0,
+   :name "Keuchi",
+   :type M,
+   :size V,
+   :orbits
+   {0 {:zone :outer, :available false},
+    6.0 {:available true, :zone :outer},
+    7 {:zone :outer, :available true},
+    1 {:zone :outer, :available true},
+    4 {:zone :outer, :available true},
+    6 {:zone :outer, :available true},
+    3 {:zone :outer, :available true},
+    2 {:zone :outer, :available false},
+    5 {:zone :outer, :available true},
+    8 {:zone :outer, :available false}},
+   :num-planetoids 1,
+   :is-primary? true,
+   :subtype 5}
+  {:secondaries (),
+   :planets ({:type GG, :name "Murat", :size :small, :orbit 0}),
+   :num-gg 0,
+   :name "Hawn",
+   :type M,
+   :size V,
+   :orbits
+   {7.8 {:available true, :zone :outer},
+    7.4 {:available true, :zone :outer},
+    2 {:zone :outer, :available true},
+    1 {:zone :outer, :available false},
+    0 {:zone :outer, :available false}},
+   :num-planetoids 1,
+   :is-primary? true,
+   :subtype 6}
+  {:secondaries (),
+   :planets
+   ({:type GG, :name "Earnix", :size :large, :orbit 7}
+    {:type GG, :name "Ason", :size :large, :orbit 9}),
+   :num-gg 0,
+   :name "Ritz",
+   :type F,
+   :size VI,
+   :orbits
+   {0 {:zone :inner, :available true},
+    5.8 {:available true, :zone :outer},
+    7 {:zone :outer, :available false},
+    1 {:zone :inner, :available true},
+    4 {:zone :outer, :available false},
+    6 {:zone :outer, :available true},
+    3 {:zone :habitable, :available true},
+    2 {:zone :inner, :available false},
+    9 {:zone :outer, :available false},
+    5 {:zone :outer, :available true},
+    8 {:zone :outer, :available true}},
+   :num-planetoids 2,
+   :is-primary? true,
+   :subtype 7})
