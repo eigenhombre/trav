@@ -69,7 +69,7 @@
     (->> make-living-character
          (repeatedly 100)
          (map :credits)
-         (apply +)) => (roughly 1500000 900000))
+         (apply +)) => (roughly 1500000 1000000))
 
 
   (fact "Being in the service gets you stuff."
