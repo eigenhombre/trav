@@ -572,17 +572,66 @@
       place-ggs))
 
 
+(defn format-planet [planet]
+  (condp = (:type planet)
+    'GG (format " %-9s %-10s %s"
+                (:orbit planet)
+                (:name planet)
+                (str (if (= (:size planet) :small) "Small" "Large")
+                     " GG"))
+    "...something else..."))
+
+
 (defn format-star [{:keys [is-primary?
                            name
                            size
                            type
                            subtype]}]
-  (format "%-10s %-10s %s%s %s"
+  (format "%-10s %-10s %s"
           (if is-primary? "Primary" "Companion")
           name
-          type
-          subtype
-          size))
+          (str type subtype " " size)))
+
+
+(defn format-system [star]
+  (clojure.string/join
+   "\n"
+   (list* (format "%-10s %-10s %-15s %-1s"
+                  "Orbit"
+                  "Name"
+                  "UPP"
+                  "Remarks")
+          (format-star star)
+          (concat (map format-planet (sort-by :orbit (:planets star)))
+                  (mapcat
+                   #(list* (format-star %)
+                           (->> %
+                                :planets
+                                (sort-by :orbit)
+                                (map format-planet)))
+                   (:secondaries star))))))
+
+
+(evalq (-> (make-system)
+           format-system
+           (clojure.string/split #"\n")))
+
+;;=>
+'["Orbit      Name       UPP             Remarks"
+  "Primary    Shamilton  M5 II"
+  " 0         Arsha      Small GG"
+  " 1         Ldip       Small GG"
+  " 4         Charlie    Small GG"
+  " 6.4       Rold       Large GG"
+  " 7.4       Nford      Small GG"
+  "Companion  Tanya      K1 VI"
+  " 1         Thomas     Small GG"
+  " 2         Wahar      Large GG"
+  " 3         Slartin    Small GG"
+  "Companion  Aananda    K6 VI"
+  " 0         Madoss     Large GG"
+  " 2         Slav       Small GG"]
+
 
 
 (evalq (->> make-system
