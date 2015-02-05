@@ -76,7 +76,7 @@
 (defn- num-gg [s]
   (->> s
        :planets
-       (filter (comp (partial = 'GG) :type))
+       (filter (comp (partial = :gg) :type))
        count))
 
 
@@ -112,14 +112,6 @@
        (remove #{1})) => ())
 
 
-(fact "Some stars have planetoid belts"
-  (->> (systems)
-       (map :num-planetoids)
-       (take 100)
-       average
-       double) => (roughly 1.41 0.3))
-
-
 (facts "If a companion is present, certain restrictions on
         available orbits exist."
   (fact "In a system with companion in orbit 2, orbits 0 and 4 are available..."
@@ -144,6 +136,47 @@
   (->> (systems)
        (mapcat :secondaries)
        (map (juxt :orbit (comp keys :orbits)))
+       (filter (comp seq second))  ;; Reject ones with no orbits
        (filter (comp integer? first))
        (take 100)
        (every? (fn [[o os]] (>= o (apply max os))))) => true)
+
+
+(defn- star-has-both-gg-and-planetoid [{planets :planets}]
+  (let [types (->> planets
+                   (map :type)
+                   vec)]
+    (and (= (count types) 2)
+         (some #{:gg} types)
+         (some #{:planetoid} types))))
+
+
+(defn- star-gg-has-integer-orbit [{planets :planets}]
+  (->> planets
+       (filter (comp (partial = :gg) :type))
+       (filter (comp integer? :orbit))
+       seq))
+
+
+(facts "About planetoid belts"
+  (let [stars (take 300 (systems))]
+    (fact "Some stars have planetoid belts"
+      (->> stars
+           (mapcat :planets)
+           (map (comp (partial = :planetoid) :type))
+           set) => (contains true))
+    (fact "Planetoid belts are named 'Planetoid belt' and are size 0"
+      (->> stars
+           (mapcat :planets)
+           (filter (comp (partial = :planetoid) :type))
+           (map (juxt :name :size))
+           set) => #{["Planetoid belt" 0]})
+    (fact "When one gas giants and one planetoid belt exist, planetoid
+           orbits are one in from GGs"
+      (->> stars
+           (filter star-has-both-gg-and-planetoid)
+           (filter star-gg-has-integer-orbit)
+           (map :planets)
+           (map (partial sort-by :orbit))
+           (take 3)
+           clojure.pprint/pprint))))

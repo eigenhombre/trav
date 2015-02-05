@@ -543,20 +543,39 @@
           choices (if (seq preferred)
                     preferred
                     (available-orbits star))]
-      (-> (if (seq choices)
+      (-> (if-not (seq choices)
+            star
             (let [choicenums (keys choices)
                   o (rand-nth choicenums)]
               (-> star
-                  (update-in [:planets] conj {:type 'GG
+                  (update-in [:planets] conj {:type :gg
                                               :name (generic-name)
                                               :size (rand-nth [:small :large])
                                               :orbit o})
-                  (assoc-in [:orbits o :available] false)))
-            star)
+                  (assoc-in [:orbits o :available] false))))
           (update-in [:num-gg] dec)
           (assoc :secondaries
             (map place-ggs (:secondaries star)))
           place-ggs))))
+
+
+(defn place-planetoid-belts [{:keys [num-planetoids orbits] :as star}]
+  (if-not (pos? num-planetoids)
+    star
+    (let [orbit-choices (available-orbits star)]
+      (-> (if-not (seq orbit-choices)
+            star
+            (let [o (rand-nth (keys orbit-choices))]
+              (-> star
+                  (update-in [:planets] conj {:type :planetoid
+                                              :name "Planetoid belt"
+                                              :orbit o
+                                              :size 0})
+                  (assoc-in [:orbits o :available] false))))
+          (update-in [:num-planetoids] dec)
+          (assoc :secondaries
+            (map place-planetoid-belts (:secondaries star)))
+          place-planetoid-belts))))
 
 
 (defn make-system []
@@ -569,7 +588,8 @@
       add-capture-orbits
       determine-gas-giant-qty
       determine-planetoid-qty
-      place-ggs))
+      place-ggs
+      place-planetoid-belts))
 
 
 (defn format-planet [planet]
