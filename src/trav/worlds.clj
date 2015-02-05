@@ -235,8 +235,21 @@
  4    O  O  O  O  O  O)
 
 
-(defn- round-for-table [n]
-  (* (int (/ n 5)) 5))
+(defn- round-subtype-to-nearest-mult-of-five [subtype]
+  (* (int (/ subtype 5)) 5))
+
+
+(defn bracketed-lookup
+  "
+  Look up <roll> in <table>, handling over/underflows gracefully.
+  "
+  [table roll]
+  (let [ks (keys table)
+        [max-key min-key] (apply (juxt max min) (keys table))]
+    (->> roll
+         (min max-key)
+         (max min-key)
+         table)))
 
 
 (defn zone-sym-to-kw [s]
@@ -251,14 +264,22 @@
   (->> size (str "size-") symbol eval))
 
 
+(defn zone-for-dwarf
+  "
+  Dwarf table is simple but has special column names.  Just hard-code
+  the table for now.
+  "
+  [type subtype orbit]
+  (zone-sym-to-kw (if (and (= type 'D)
+                           (= subtype 'B)
+                           (= orbit 0))
+                    'H
+                    'O)))
+
+
 (defn lookup-zone [size type subtype orbit]
-  (if (= size 'D)  ;; Dwarf table is simple but has special column names:
-    (zone-sym-to-kw
-     (if (and (= type 'D)
-              (= subtype 'B)
-              (= orbit 0))
-       'H
-       'O))
+  (if (= size 'D)
+    (zone-for-dwarf type subtype orbit)
     ;; Otherwise, figure out nearest appropriate row and column for lookup:
     (let [zone-table (zone-table-for-size size)
           available-orbits (keys zone-table)
@@ -273,21 +294,8 @@
                              (keys subtable))
           k (if (= nine-key (typesym type subtype))
               nine-key
-              (typesym type (round-for-table subtype)))]
+              (typesym type (round-subtype-to-nearest-mult-of-five subtype)))]
       (-> k subtable zone-sym-to-kw))))
-
-
-(defn bracketed-lookup
-  "
-  Look up <roll> in <table>, handling over/underflows gracefully.
-  "
-  [table roll]
-  (let [ks (keys table)
-        [max-key min-key] (apply (juxt max min) (keys table))]
-    (->> roll
-         (min max-key)
-         (max min-key)
-         table)))
 
 
 (defn- get-size-for-type [table type subtype size-roll]
