@@ -177,6 +177,11 @@
            (filter star-has-both-gg-and-planetoid)
            (filter star-gg-has-integer-orbit)
            (map :planets)
-           (map (partial sort-by :orbit))
+           (map (partial sort-by :type))  ;; GGs first, then planetoid
+           ;; Remove ones where GG has orbit of 0
+           (remove (comp #(and (= (:type %) :gg)
+                               (= (:orbit %) 0)) first))
+           (map (partial map :orbit))
+           (map (partial apply -))
            (take 3)
-           clojure.pprint/pprint))))
+           clojure.pprint/pprint))))  ;; You are here
