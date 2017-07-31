@@ -84,4 +84,3 @@
          (map :memberships)
          (apply concat)
          (some #{'Travellers})) => truthy))
-

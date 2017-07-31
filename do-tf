@@ -1,0 +1,5 @@
+#!/bin/bash
+
+pushd tf
+terraform $1 -var "aws_account_id=$AWS_ACCOUNT_ID"
+popd
