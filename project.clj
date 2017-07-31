@@ -9,4 +9,6 @@
   :target-path "target/"
   :uberjar-name "trav.jar"
   :profiles {:uberjar {:aot :all}
-             :dev {:plugins [[com.jakemccrary/lein-test-refresh "0.20.0"]]}})
+             :dev {:dependencies [[midje "1.6.3"]]
+                   :plugins [[lein-midje "3.1.3"]
+                             [com.jakemccrary/lein-test-refresh "0.20.0"]]}})
