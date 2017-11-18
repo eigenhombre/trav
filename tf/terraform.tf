@@ -1,8 +1,24 @@
-variable "aws_region" {
+variable "AWS_REGION" {
   default = "us-east-1"
 }
 
-variable "aws_account_id" {}
+variable "AWS_ACCOUNT_ID" {}
+variable "AWS_ACCESS_KEY" {}
+variable "AWS_SECRET_KEY_ID" {}
+
+provider "aws" {
+  access_key = "${var.AWS_ACCESS_KEY}"
+  secret_key = "${var.AWS_SECRET_KEY_ID}"
+  region     = "${var.AWS_REGION}"
+}
+
+# Unused: trying to hook custom domain to our API gateway:
+# variable "API_CERT_DOMAIN" {}
+# data "aws_acm_certificate" "api_cert" {
+#   domain   = "${var.API_CERT_DOMAIN}"
+#   statuses = ["ISSUED"]
+# }
+
 
 resource "aws_s3_bucket" "jar_bucket" {
   bucket = "eigenhombre_jars"
@@ -92,7 +108,7 @@ resource "aws_api_gateway_integration" "proxy_root_handler_integration" {
   rest_api_id = "${aws_api_gateway_rest_api.proxy.id}"
   resource_id = "${aws_api_gateway_rest_api.proxy.root_resource_id}"
   http_method = "${aws_api_gateway_method.proxy_root_methods.http_method}"
-  uri = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${var.aws_region}:${var.aws_account_id}:function:${aws_lambda_function.test_lambda.function_name}/invocations"
+  uri = "arn:aws:apigateway:${var.AWS_REGION}:lambda:path/2015-03-31/functions/arn:aws:lambda:${var.AWS_REGION}:${var.AWS_ACCOUNT_ID}:function:${aws_lambda_function.test_lambda.function_name}/invocations"
 }
 
 resource "aws_api_gateway_resource" "proxy_greedy_resource" {
@@ -114,7 +130,7 @@ resource "aws_api_gateway_integration" "proxy_greedy_handler_integration" {
   rest_api_id = "${aws_api_gateway_rest_api.proxy.id}"
   resource_id = "${aws_api_gateway_resource.proxy_greedy_resource.id}"
   http_method = "${aws_api_gateway_method.proxy_greedy_methods.http_method}"
-  uri = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${var.aws_region}:${var.aws_account_id}:function:${aws_lambda_function.test_lambda.function_name}/invocations"
+  uri = "arn:aws:apigateway:${var.AWS_REGION}:lambda:path/2015-03-31/functions/arn:aws:lambda:${var.AWS_REGION}:${var.AWS_ACCOUNT_ID}:function:${aws_lambda_function.test_lambda.function_name}/invocations"
 }
 
 resource "aws_api_gateway_deployment" "proxy_deployment" {
@@ -147,6 +163,31 @@ resource "aws_iam_role" "handler_role" {
 }
   EOF
 }
+
+
+# Keep Lambda "warm" to make startup much faster:
+resource "aws_cloudwatch_event_rule" "trav_5min_rule" {
+    name = "trav-every-five-minutes"
+    description = "Fires Trav lambda every five minutes"
+    schedule_expression = "rate(5 minutes)"
+}
+
+
+resource "aws_lambda_permission" "cw_event_call_trav_lambda" {
+    statement_id = "AllowExecutionFromCloudWatch"
+    action = "lambda:InvokeFunction"
+    function_name = "${aws_lambda_function.test_lambda.function_name}"
+    principal = "events.amazonaws.com"
+    source_arn = "${aws_cloudwatch_event_rule.trav_5min_rule.arn}"
+}
+
+
+resource "aws_cloudwatch_event_target" "target5min" {
+    rule = "${aws_cloudwatch_event_rule.trav_5min_rule.name}"
+    target_id = "test_lambda"
+    arn = "${aws_lambda_function.test_lambda.arn}"
+}
+
 
 output "url" {
   value = "${aws_api_gateway_deployment.proxy_deployment.invoke_url}"

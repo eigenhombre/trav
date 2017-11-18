@@ -37,10 +37,10 @@
       (json/generate-stream
      {:statusCode 200
       :headers {"Content-Type"
-                (if (or (= language "english")
-                        (= language "edn"))
-                  "text/plain"
-                  "application/json")}
+                (condp = language
+                    "english" "text/plain"
+                    "edn" "text/plain"
+                    "application/json")}
       :body (lambda-output n language)}
      (clojure.java.io/writer out)
      {:pretty true})))

@@ -17,12 +17,25 @@ expansions, playing scenarios, and related data.
 The code here can be used (so far) for character generation; see
 [[Usage]], below.  Star system generation functionality is in progress!
 
+* Getting it
+
+For the moment, you'll need to check out this repo and =lein install=
+it.  Eventually it will probably go up on Clojars.
+
+Or...
+** ... try it out!
+I [[https://github.com/eigenhombre/trav/blob/master/tf/terraform.tf][deployed]] (via [[https://www.terraform.io/][Terraform]] and AWS) a working example in the form of an
+API for you to try:
+- [[https://cbn1afevhh.execute-api.us-east-1.amazonaws.com/production?lang%3Denglish][English]]
+- [[https://cbn1afevhh.execute-api.us-east-1.amazonaws.com/production][JSON only]]
+- [[https://cbn1afevhh.execute-api.us-east-1.amazonaws.com/production?lang%3Dedn][Pretty-printed edn]] (Clojure data format)
+
 * Why?
 
-- To experiment with using [[https://github.com/eigenhombre/trav/blob/master/src/trav/chars.clj#L85][small DSLs]] to represent RPG rules and
-  tables.  This is something Clojure (or any Lisp) is very good at,
-  and which would be hard to do in a similar way in many other
-  languages;
+- To experiment with using small DSLs [[https://github.com/eigenhombre/trav/blob/master/src/trav/chars.clj#L85][(example)]] to represent RPG rules
+  and tables.  Though this code is /not/ particularly idiomatic,
+  readable micro-DSLs like this are something Clojure (or any Lisp) is
+  very good at, and are hard to do in a similar way in more mainstream languages;
 - To indulge my long-standing interests in
   - simulation
   - science fiction
@@ -32,7 +45,6 @@ The code here can be used (so far) for character generation; see
 - To tune and refine my [[https://github.com/eigenhombre/namejen][Markov-chain-based Character Name Generator]];
 - As a launching point for other game experiments;
 - Because it's fun!
-
 * Status
 
 /This software is very alpha./ APIs, namespaces, usage, etc. will
@@ -79,12 +91,6 @@ Finish star system generation.
   - Character (1-1, armies)
   - Ship (1-1, fleets)
 - ...
-
-* Getting it
-
-For the moment, you'll need to check out this repo and =lein install=
-it.  Eventually it will probably go up on Clojars.
-
 * Contributing
 
 Pull requests welcome, but only for Classic Traveller, please.  I'm
