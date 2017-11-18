@@ -23,7 +23,8 @@
             (clojure.pprint/pprint
              {:characters (repeatedly n chr/make-living-character)}))
     (json/generate-string
-     {:characters (repeatedly n chr/make-living-character)})))
+     {:characters (repeatedly n chr/make-living-character)}
+     {:pretty true})))
 
 
 (deflambdafn trav.lambda.Characters [in out ctx]
