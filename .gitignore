@@ -15,3 +15,6 @@ Screen*
 docs/
 misc/
 target/
+tf/.terraform/
+tf/terraform.tfstate
+tf/terraform.tfstate.backup
