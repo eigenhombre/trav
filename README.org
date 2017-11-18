@@ -24,19 +24,11 @@ it.  Eventually it will probably go up on Clojars.
 
 Or...
 ** ... try it out!
-I [[https://github.com/eigenhombre/trav/blob/master/tf/terraform.tf][deployed]] (via [[https://www.terraform.io/][Terraform]] and AWS) a working example in the form of an
-API for you to try:
+I [[https://github.com/eigenhombre/trav/blob/master/tf/terraform.tf][deployed]] (via [[https://www.terraform.io/][Terraform]] and AWS) a working example in the form of an API:
 
-- [[https://cbn1afevhh.execute-api.us-east-1.amazonaws.com/production?lang%3Denglish][English]] https://cbn1afevhh.execute-api.us-east-1.amazonaws.com/production?lang=english
-- [[https://cbn1afevhh.execute-api.us-east-1.amazonaws.com/production][JSON only]]
-- [[https://cbn1afevhh.execute-api.us-east-1.amazonaws.com/production?lang%3Dedn][Pretty-printed edn]] (Clojure data format)
-
-@@html:
-<ul>
-  <li><a href="https://cbn1afevhh.execute-api.us-east-1.amazonaws.com/production?lang=english" rel="nofollow">English</a></li>
-  <li><a href="https://cbn1afevhh.execute-api.us-east-1.amazonaws.com/production" rel="nofollow">JSON only</a></li>
-  <li><a href="https://cbn1afevhh.execute-api.us-east-1.amazonaws.com/production?lang=edn" rel="nofollow">Pretty-printed edn</a> (Clojure data format)</li>
-</ul>@@
+| English                                  | https://cbn1afevhh.execute-api.us-east-1.amazonaws.com/production?lang=english |
+| JSON only                                | https://cbn1afevhh.execute-api.us-east-1.amazonaws.com/production              |
+| Pretty-printed edn (Clojure data format) | https://cbn1afevhh.execute-api.us-east-1.amazonaws.com/production?lang=edn     |
 
 * Why?
 
