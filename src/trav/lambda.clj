@@ -35,13 +35,13 @@
                     :queryStringParameters)
         language (:lang params)
         n (or (some-> params :n Integer.) 10)]
-      (json/generate-stream
+    (json/generate-stream
      {:statusCode 200
       :headers {"Content-Type"
                 (condp = language
-                    "english" "text/plain"
-                    "edn" "text/plain"
-                    "application/json")}
+                  "english" "text/plain"
+                  "edn" "text/plain"
+                  "application/json")}
       :body (lambda-output n language)}
      (clojure.java.io/writer out)
      {:pretty true})))
