@@ -1,23 +1,14 @@
-variable "AWS_REGION" {
-  default = "us-east-1"
-}
-
+variable "AWS_REGION" { default = "us-east-1" }
 variable "AWS_ACCOUNT_ID" {}
 variable "AWS_ACCESS_KEY" {}
 variable "AWS_SECRET_KEY_ID" {}
+
 
 provider "aws" {
   access_key = "${var.AWS_ACCESS_KEY}"
   secret_key = "${var.AWS_SECRET_KEY_ID}"
   region     = "${var.AWS_REGION}"
 }
-
-# Unused: trying to hook custom domain to our API gateway:
-# variable "API_CERT_DOMAIN" {}
-# data "aws_acm_certificate" "api_cert" {
-#   domain   = "${var.API_CERT_DOMAIN}"
-#   statuses = ["ISSUED"]
-# }
 
 
 resource "aws_s3_bucket" "jar_bucket" {
@@ -30,6 +21,7 @@ resource "aws_s3_bucket" "jar_bucket" {
   }
 }
 
+
 resource "aws_s3_bucket_object" "jar_file" {
   bucket = "eigenhombre_jars"
   depends_on = ["aws_s3_bucket.jar_bucket"]
@@ -37,6 +29,7 @@ resource "aws_s3_bucket_object" "jar_file" {
   source = "../target/trav.jar"
   etag   = "${md5(file("../target/trav.jar"))}"
 }
+
 
 resource "aws_iam_role" "iam_for_lambda" {
   name = "iam_for_lambda"
@@ -81,15 +74,6 @@ resource "aws_lambda_permission" "handler_apigateway_permission" {
   principal = "apigateway.amazonaws.com"
 }
 
-resource "aws_api_gateway_rest_api" "trav_api" {
-  name = "TravAPI"
-}
-
-resource "aws_api_gateway_resource" "trav_api_res_trav" {
-  rest_api_id = "${aws_api_gateway_rest_api.trav_api.id}"
-  parent_id   = "${aws_api_gateway_rest_api.trav_api.root_resource_id}"
-  path_part   = "trav"
-}
 
 resource "aws_api_gateway_rest_api" "proxy" {
   name = "trav-proxy"
