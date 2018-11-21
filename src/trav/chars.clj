@@ -865,28 +865,29 @@ our-character
 
 
 ;; Age distributions for living characters after service:
-'(->> make-living-character
-      (repeatedly 10000)
-      (map :age)
-      frequencies
-      (map vec)
-      (sort-by first)
-      vec)
-;;=>
-[[22 4792]
- [26 2401]
- [30 1277]
- [34 681]
- [38 355]
- [42 207]
- [46 121]
- [50 68]
- [54 46]
- [58 23]
- [62 14]
- [66 9]
- [70 2]
- [74 1]
- [78 1]
- [82 1]
- [94 1]]
+(comment
+  (->> make-living-character
+       (repeatedly 10000)
+       (map :age)
+       frequencies
+       (map vec)
+       (sort-by first)
+       vec)
+  ;;=>
+  [[22 4792]
+   [26 2401]
+   [30 1277]
+   [34 681]
+   [38 355]
+   [42 207]
+   [46 121]
+   [50 68]
+   [54 46]
+   [58 23]
+   [62 14]
+   [66 9]
+   [70 2]
+   [74 1]
+   [78 1]
+   [82 1]
+   [94 1]])

@@ -12,9 +12,8 @@
       (->> [(format-name-map char)
             (format-skills char)
             (format-swag char)]
-       (remove empty?)
-       (interpose "\n")
-       (concat ["\n"])
-       (apply str)
-       println))))
-
+           (remove empty?)
+           (interpose "\n")
+           (concat ["\n"])
+           (apply str)
+           println))))
