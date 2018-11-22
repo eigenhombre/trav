@@ -1,77 +1,75 @@
 (ns trav.worlds-test
-  (:require [trav.worlds :refer :all]
-            [midje.sweet :refer :all]))
+  (:require [trav.worlds :as w]
+            [clojure.test :refer [deftest testing is]]))
 
+(defn- systems [] (repeatedly w/make-system))
 
-(defn- systems [] (repeatedly make-system))
+(deftest zone-tables
+  (testing "zone tables"
+    (is (= 'H (-> w/size-Ia (get 11) (get 'F5))))
+    (is (= (w/lookup-zone 'V 'B 0 -1) :scorched))
+    (is (= (w/lookup-zone 'V 'B 0 0) :scorched))
+    (is (= (w/lookup-zone 'V 'B 0 11) :inner))
+    (is (= (w/lookup-zone 'V 'B 0 12) :habitable))
+    (is (= (w/lookup-zone 'V 'B 0 13) :outer))
+    (is (= (w/lookup-zone 'V 'B 0 666) :outer))
+    (is (= (w/lookup-zone 'D 'D 'B 0) :habitable))
+    (is (= (w/lookup-zone 'D 'D 'B 1) :outer))
+    (is (= (w/lookup-zone 'D 'D 'K 0) :outer))
+    (is (= (map (partial w/lookup-zone 'VI 'F 7) (range 5))
+           [:inner :inner :inner :habitable :outer]))))
 
+(deftest habitable-zones
+  (testing "secondary orbits never occur INSIDE primary stars"
+    (let [zones
+          (->> (systems)
+               (filter (comp (partial some #{:inside-star})
+                             (partial map :zone)
+                             vals
+                             :orbits))
+               (filter (comp seq :secondaries))
+               (take 100)
+               (mapcat (fn [star]
+                         (for [s (:secondaries star)]
+                           (-> star :orbits (get (:orbit s))))))
+               (map :zone)
+               (remove nil?))]
+      (is (not (some #{:inside-star} zones)))
+      (is (some #{:habitable} zones)))))
 
-(facts "About zone tables"
-  (-> size-Ia (get 11) (get 'F5)) => 'H
-  (lookup-zone 'V 'B 0 -1) => :scorched
-  (lookup-zone 'V 'B 0 0) => :scorched
-  (lookup-zone 'V 'B 0 11) => :inner
-  (lookup-zone 'V 'B 0 12) => :habitable
-  (lookup-zone 'V 'B 0 13) => :outer
-  (lookup-zone 'V 'B 0 666) => :outer
-  (map (partial lookup-zone 'VI 'F 7) (range 5))
-  => [:inner :inner :inner :habitable :outer]
-  (lookup-zone 'D 'D 'B 0) => :habitable
-  (lookup-zone 'D 'D 'B 1) => :outer
-  (lookup-zone 'D 'D 'K 0) => :outer)
+(deftest orbits-around-secondaries
+  (testing "Secondaries / companions have orbits, too."
+    (< 30
+       (->> (systems)
+            (take 100)
+            (mapcat :secondaries)
+            (map :orbits)
+            count)
+       70)))
 
+(deftest empty-orbits
+  (testing "Some orbits are empty/unavailable"
+    (is (->> (systems)
+             (map :orbits)
+             (mapcat vals)
+             (map :available)
+             (take 100)
+             (remove true?)
+             not-empty))))
 
-(fact "Secondary orbits never occur INSIDE primary stars"
-  (let [zone-set
-        (->> (systems)
-             ;; Only choose ones that have inside-star orbital zones
-             (filter (comp (partial some #{:inside-star})
-                           (partial map :zone)
-                           vals
-                           :orbits))
-             ;; Make sure there are secondaries
-             (filter (comp seq :secondaries))
-             (take 20)
-             ;; Compare orbits of secondaries with primary orbital zones
-             (mapcat (fn [star]
-                       (for [s (:secondaries star)]
-                         (-> star :orbits (get (:orbit s))))))
-             ;; Make sure none are inside primary star.
-             (into #{}))]
-    zone-set (contains :habitable)
-    zone-set =not=> (contains :inside-star)))
-
-
-(fact "Secondaries / companions have orbits, too."
-  (->> (systems)
-       (take 100)
-       (mapcat :secondaries)
-       (map :orbits)
-       count) => (roughly 50 20))
-
-
-(fact "Some orbits are empty/unavailable"
-  (->> (systems)
-       (map :orbits)
-       (mapcat vals)
-       (map :available)
-       (take 100)
-       set) => (contains false))
-
-
-(fact "Some stars have captured planets"
-  (->> (systems)
-       (map :orbits)
-       (mapcat keys)
-       (take 100)
-       (remove integer?)) =not=> [])
-
+(deftest captured-planets
+  (testing "Some stars have captured planets"
+    (is (->> (systems)
+             (map :orbits)
+             (mapcat keys)
+             (take 100)
+             (remove integer?)
+             not-empty))))
 
 (defn- average [s]
   (let [[n sum] (reduce (fn [[c x] [c0 x0]] [(+ c c0) (+ x x0)])
                         (map vector (repeat 1) s))]
     (/ sum n)))
-
 
 (defn- num-gg [s]
   (->> s
@@ -79,42 +77,43 @@
        (filter (comp (partial = :gg) :type))
        count))
 
-
-(facts "About GGs"
+(deftest gas-giants
   (let [several-systems (take 100 (systems))]
-    (fact "Avg. number of gas giants should be 3.3 or so"
-      (->> several-systems
-           (map num-gg)
-           average
-           double) => (roughly 3.2 0.5))
+    (testing "Avg. number of gas giants should be 3.3 or so"
+      (is (< 2.7
+             (->> several-systems
+                  (map num-gg)
+                  average
+                  double)
+             3.7)))
+    (testing "Secondaries should have gas giants, too."
+      (is (< 2.7
+             (->> several-systems
+                  (map num-gg)
+                  average
+                  double)
+             3.7)))
+    (testing "Gas giants have orbits"
+      (is (->> several-systems
+               (mapcat :planets)
+               (map :orbit)
+               (remove nil?)
+               not-empty)))))
 
-    (fact "Secondaries should have gas giants, too."
-      (->> several-systems
-           (map num-gg)
-           average
-           double) => (roughly 3.2 0.5))
+(deftest uniqueness-of-orbits
+  (testing "Planetary orbits are unique"
+    (is (->> (systems)
+             (take 100)
+             (map :planets)
+             (map (partial map :orbit))
+             ;; Only original, integer orbits:
+             (map (partial filter integer?))
+             (mapcat (comp vals frequencies))
+             (remove #{1})
+             empty))))
 
-    (fact "Gas giants have orbits"
-      (->> several-systems
-           (mapcat :planets)
-           (map :orbit)
-           (remove nil?)) =not=> ())))
-
-
-(fact "Planetary orbits are unique"
-  (->> (systems)
-       (take 100)
-       (map :planets)
-       (map (partial map :orbit))
-       ;; Only original, integer orbits:
-       (map (partial filter integer?))
-       (mapcat (comp vals frequencies))
-       (remove #{1})) => ())
-
-
-(facts "If a companion is present, certain restrictions on
-        available orbits exist."
-  (fact "In a system with companion in orbit 2, orbits 0 and 4 are available..."
+(deftest restrictions-on-orbits
+  (testing "In a system with companion in orbit 2, orbits 0 and 4 are available..."
     (let [orbits
           (->> (systems)
                (filter (comp (partial = 1) count :secondaries))
@@ -123,24 +122,23 @@
                (filter (comp true? :available second))
                (map first)
                (take 20))]
-      orbits => (contains 0)
-      orbits => (contains 4)
-      (fact "...but orbits 1, 2, 3 are not."
-        orbits =not=> (contains 1)
-        orbits =not=> (contains 2)
-        orbits =not=> (contains 3)))))
+      (is (some #{0} orbits))
+      (is (some #{4} orbits))
+      (testing "...but orbits 1, 2, 3 are not."
+        (is (not (some #{1} orbits)))
+        (is (not (some #{2} orbits)))
+        (is (not (some #{3} orbits)))))))
 
-
-(fact "Orbit numbers of orbits around the companion never exceed 1/2
+(deftest orbit-counts
+  (testing "numbers of orbits around the companion never exceed 1/2
        the companion star's orbit number around the primary."
-  (->> (systems)
-       (mapcat :secondaries)
-       (map (juxt :orbit (comp keys :orbits)))
-       (filter (comp seq second))  ;; Reject ones with no orbits
-       (filter (comp integer? first))
-       (take 100)
-       (every? (fn [[o os]] (>= o (apply max os))))) => true)
-
+    (is (->> (systems)
+             (mapcat :secondaries)
+             (map (juxt :orbit (comp keys :orbits)))
+             (filter (comp seq second))  ;; Reject ones with no orbits
+             (filter (comp integer? first))
+             (take 100)
+             (every? (fn [[o os]] (>= o (apply max os))))))))
 
 (defn- star-has-both-gg-and-planetoid [{planets :planets}]
   (let [types (->> planets
@@ -158,20 +156,21 @@
        seq))
 
 
-(facts "About planetoid belts"
+(deftest planetoid-belts
   (let [stars (take 300 (systems))]
-    (fact "Some stars have planetoid belts"
-      (->> stars
-           (mapcat :planets)
-           (map (comp (partial = :planetoid) :type))
-           set) => (contains true))
-    (fact "Planetoid belts are named 'Planetoid belt' and are size 0"
-      (->> stars
-           (mapcat :planets)
-           (filter (comp (partial = :planetoid) :type))
-           (map (juxt :name :size))
-           set) => #{["Planetoid belt" 0]})
-    (fact "When one gas giants and one planetoid belt exist, planetoid
+    (testing "Some stars have planetoid belts"
+      (is (some true? (->> stars
+                           (mapcat :planets)
+                           (map (comp (partial = :planetoid) :type))
+                           set))))
+    (testing "Planetoid belts are named 'Planetoid belt' and are size 0"
+      (is (= #{["Planetoid belt" 0]}
+             (->> stars
+                  (mapcat :planets)
+                  (filter (comp (partial = :planetoid) :type))
+                  (map (juxt :name :size))
+                  set))))
+    (testing "When one gas giants and one planetoid belt exist, planetoid
            orbits are one in from GGs"
       (->> stars
            (filter star-has-both-gg-and-planetoid)
@@ -184,4 +183,4 @@
            (map (partial map :orbit))
            (map (partial apply -))
            (take 3)
-           clojure.pprint/pprint))))  ;; You are here
+           prn))))  ;; You are here

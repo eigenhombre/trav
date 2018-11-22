@@ -261,8 +261,11 @@
 
 
 (defn zone-table-for-size [size]
-  (->> size (str "size-") symbol eval))
-
+  (->> size
+       (str "trav.worlds/size-")
+       symbol
+       find-var
+       var-get))
 
 (defn zone-for-dwarf
   "
