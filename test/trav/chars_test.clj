@@ -68,21 +68,21 @@
 
 (deftest mustering-out
   (testing "Being in the service earns you money"
-    (is (< 1E6
+    (is (< 0.5E6
            (->> make-living-character
                 (repeatedly 100)
                 (map :credits)
                 (apply +))
-           3E6)))
+           2.5E6)))
 
 
   (testing "Being in the service gets you stuff"
-    (is (< 80
+    (is (< 10
            (->> make-living-character
                 (repeatedly 100)
                 (mapcat :possessions)
                 count)
-           140)))
+           190)))
 
   (testing "Some people get Travellers' Aid Society"
     (is (->> make-living-character
