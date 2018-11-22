@@ -72,10 +72,10 @@ Finish star system generation.
 
 *** Simulation ideas
 - Monte Carlo questions:
-  - What is the average survival rate during character generation?
+  - What is the average survival rate during character generation? (Ans.: 71%)
+  - Which skills are most common? (Ans.: Electronic)
+  - What is the averge number of credits received during mustering out? (Ans.: about 19,000)
   - What strategies balance high survival rate + high skill levels?
-  - What is the averge number of credits received during mustering out?
-  - Which skills are most common (depends on service duration, survivability, etc.)?
 *** Other Generators
 - Starships
 - Terrain

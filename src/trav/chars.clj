@@ -417,11 +417,10 @@
 
 
 (defn maybe-kill [char]
-  (if-not (:living? char)
-    char
-    (if (roll-for-service-table-succeeds? survival char)
-      char
-      (assoc char :living? false))))
+  (if (and (:living? char)
+           (not (roll-for-service-table-succeeds? survival char)))
+    (assoc char :living? false)
+    char))
 
 
 (defn maybe-reinlist [char]
@@ -864,8 +863,37 @@ our-character
 "Dagger, HighPsg, 55000 CR"
 
 
-;; Age distributions for living characters after service:
 (comment
+
+  ;; Survival rate:
+  (->> make-character
+       (repeatedly 10000)
+       (map :living?)
+       frequencies)
+  ;;=>
+  {true 7141, false 2859}
+
+  ;; Average money at mustering out time:
+  (let [n 1000]
+    (/ (->> make-living-character
+            (repeatedly n)
+            (map :credits)
+            (apply +))
+       n))
+  ;;=>
+  18750
+
+  ;; Most common skill:
+  (->> make-character
+       (repeatedly 1000)
+       (map :skills)
+       (apply (partial merge-with +))
+       (sort-by (comp - second))
+       ffirst)
+  ;;=>
+  'Electronic
+
+  ;; Age distributions for living characters after service:
   (->> make-living-character
        (repeatedly 10000)
        (map :age)
