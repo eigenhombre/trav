@@ -3,8 +3,8 @@ sudo: true
 language: java
 jobs:
   include:
-    - stage: ancient
-      script: clojure -Aoutdated
+    # - stage: ancient
+    #   script: clojure -Aoutdated
     - stage: unittest
       script: clojure -Atest
 install:
