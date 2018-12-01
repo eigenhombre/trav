@@ -1,0 +1,8 @@
+{:deps {org.clojure/clojure {:mvn/version "1.9.0"}
+        eigenhombre/namejen {:mvn/version "0.1.8"}
+        uswitch/lambada {:mvn/version "0.1.2"}
+        cheshire {:mvn/version "5.7.1"}}
+ :aliases {:test-clj {:extra-paths ["test"]
+                      :extra-deps {com.cognitect/test-runner {:git/url "https://github.com/Olical/test-runner.git"
+                                                              :sha "7c4f5bd4987ec514889c7cd7e3d13f4ef95f256b"}}
+                      :main-opts ["-m" "cognitect.test-runner"]}}}

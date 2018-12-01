@@ -1,2 +1,16 @@
-language: clojure
-script: lein test
+# From https://oli.me.uk/2018-03-29-clojure-and-clojurescript-tests-on-travis/
+sudo: true
+language: java
+script: clojure -Atest-clj
+install:
+  - curl -O https://download.clojure.org/install/linux-install-1.9.0.358.sh
+  - chmod +x linux-install-1.9.0.358.sh
+  - sudo ./linux-install-1.9.0.358.sh
+jdk:
+  - oraclejdk8
+cache:
+  directories:
+    - $HOME/.m2
+    - $HOME/.cljs
+    - $HOME/.gitlibs
+    - .cpcache
