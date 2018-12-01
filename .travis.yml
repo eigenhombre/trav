@@ -3,10 +3,11 @@ sudo: true
 language: java
 jobs:
   include:
-    # - stage: ancient
-    #   script: clojure -Aoutdated
     - stage: unittest
       script: clojure -Atest
+    - stage: ancient
+      #      script: clojure -Aoutdated
+      script: clojure -Aoutdated
 install:
   - curl -O https://download.clojure.org/install/linux-install-1.9.0.358.sh
   - chmod +x linux-install-1.9.0.358.sh
