@@ -1,10 +1,7 @@
 # From https://oli.me.uk/2018-03-29-clojure-and-clojurescript-tests-on-travis/
 sudo: true
 language: java
-jobs:
-  include:
-    script: clojure -Aoutdated
-    script: clojure -Atest
+script: ./build.sh
 install:
   - curl -O https://download.clojure.org/install/linux-install-1.9.0.358.sh
   - chmod +x linux-install-1.9.0.358.sh
