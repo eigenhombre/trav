@@ -17,6 +17,5 @@ jdk:
 cache:
   directories:
     - $HOME/.m2
-    - $HOME/.cljs
     - $HOME/.gitlibs
-    - .cpcache
+#    - .cpcache
