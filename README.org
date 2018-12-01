@@ -19,8 +19,7 @@ The code here can be used (so far) for character generation; see
 
 * Getting it
 
-For the moment, you'll need to check out this repo and =lein install=
-it.  Eventually it will probably go up on Clojars.
+For the moment, you'll need to check out this repo.
 
 Or...
 ** ... try it out!
@@ -104,7 +103,7 @@ See the [[https://github.com/eigenhombre/trav/blob/master/src/trav/char.clj][fun
 up a few characters on the command line:
 
 #+BEGIN_EXAMPLE
-$  lein run 10
+$  clojure -A:chars 10
 
 Ubin Traka Ramsey Berta (M), 22 yrs. old, navy, 6987A7
 Cudgel-1

@@ -4,6 +4,7 @@
         cheshire {:mvn/version "5.7.1"}}
  :aliases {:uberjar {:extra-deps {seancorfield/depstar {:mvn/version "RELEASE"}}
                      :main-opts ["-m" "hf.depstar.uberjar"]}
+           :chars {:main-opts ["-m" "trav.core"]}
            :test-clj {:extra-paths ["test"]
                       :extra-deps {com.cognitect/test-runner
                                    {:git/url
