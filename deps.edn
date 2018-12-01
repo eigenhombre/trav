@@ -3,14 +3,14 @@
         uswitch/lambada {:mvn/version "0.1.2"}
         cheshire {:mvn/version "5.8.1"}}
  :outdated {:extra-deps {olical/depot {:mvn/version "RELEASE"}}
-             :main-opts ["-m" "depot.outdated.main"]}
+            :main-opts ["-m" "depot.outdated.main"]}
  :aliases {:uberjar {:extra-deps {seancorfield/depstar {:mvn/version "RELEASE"}}
                      :main-opts ["-m" "hf.depstar.uberjar"]}
            :chars {:main-opts ["-m" "trav.core"]}
-           :test-clj {:extra-paths ["test"]
-                      :extra-deps {com.cognitect/test-runner
-                                   {:git/url
-                                    "https://github.com/Olical/test-runner.git"
-                                    :sha
-                                    "7c4f5bd4987ec514889c7cd7e3d13f4ef95f256b"}}
-                      :main-opts ["-m" "cognitect.test-runner"]}}}
+           :test {:extra-paths ["test"]
+                  :extra-deps {com.cognitect/test-runner
+                               {:git/url
+                                "https://github.com/Olical/test-runner.git"
+                                :sha
+                                "7c4f5bd4987ec514889c7cd7e3d13f4ef95f256b"}}
+                  :main-opts ["-m" "cognitect.test-runner"]}}}
