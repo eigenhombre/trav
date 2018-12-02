@@ -5,10 +5,11 @@
   In most cases where the player would have a choice, uniform random
   selections are taken.
   "
-  (:require [trav.dice :refer [d]]
-            [trav.util :refer [hexish-code take-until keywordize]]
+  (:require [clojure.string]
+            [namejen.names :refer [gen-name-data-as-map]]
+            [trav.dice :refer [d]]
             [trav.macros :refer :all]
-            [namejen.names :refer [gen-name-data-as-map]]))
+            [trav.util :refer [hexish-code take-until keywordize]]))
 
 
 (defcoll attributes ST DX EN IN ED SS)
