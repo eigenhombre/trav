@@ -12,4 +12,4 @@ cache:
   directories:
     - $HOME/.m2
     - $HOME/.gitlibs
-#    - .cpcache
+    - .cpcache
