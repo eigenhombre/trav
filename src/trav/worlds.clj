@@ -1,5 +1,6 @@
 (ns trav.worlds
-  (:require [namejen.names :refer [generic-name]]
+  (:require [clojure.string]
+            [namejen.names :refer [generic-name]]
             [trav.dice :refer [d]]
             [trav.macros :refer :all]))
 
@@ -493,8 +494,7 @@
 
 (defn add-capture-orbits [star]
   (let [dm (capture-and-empty-table-dm star)]
-    (if (= (bracketed-lookup have-captured-planets
-                             (+ (d 1) dm)))
+    (if (= 'yes (bracketed-lookup have-captured-planets (+ (d 1) dm)))
       (let [nc (bracketed-lookup num-captured-planets
                                  (+ (d 1) dm))]
         (update-in star [:orbits] merge
@@ -505,7 +505,7 @@
 
 
 (defn determine-gas-giant-qty [star]
-  (let [num-gg (if-not (= (gas-giant-present (d)))
+  (let [num-gg (if-not (gas-giant-present (d))
                  0
                  (gas-giant-qty (d)))]
     (-> star
@@ -515,7 +515,7 @@
 
 
 (defn determine-planetoid-qty [star]
-  (let [num-planetoids (if-not (= (planetoid-present (d)))
+  (let [num-planetoids (if-not (planetoid-present (d))
                          0
                          (planetoid-qty (d)))]
     (-> star

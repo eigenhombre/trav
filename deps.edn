@@ -4,6 +4,9 @@
         cheshire {:mvn/version "5.8.1"}}
  :aliases {:uberjar {:extra-deps {seancorfield/depstar {:mvn/version "RELEASE"}}
                      :main-opts ["-m" "hf.depstar.uberjar"]}
+           :eastwood
+            {:main-opts ["-m" "eastwood.lint" "{:source-paths,[\"src\"]}"]
+             :extra-deps {jonase/eastwood {:mvn/version "RELEASE"}}}
            :outdated {:extra-deps {olical/depot {:mvn/version "RELEASE"}}
                       :main-opts ["-m" "depot.outdated.main"]}
            :chars {:main-opts ["-m" "trav.core"]}

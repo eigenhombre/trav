@@ -6,4 +6,5 @@ if [[ "$ancient" != *"All up to date"* ]]; then
     echo $ancient
     exit 1
 fi
+clojure -Aeastwood
 clojure -Atest

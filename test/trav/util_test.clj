@@ -3,7 +3,8 @@
             [clojure.test :refer [deftest testing is]]))
 
 (deftest hexish-code-test
-  (testing "hexish-code handles values > 15 (e.g., during char/system generation)"
+  (testing (str "hexish-code handles values > 15 "
+                "(e.g., during char/system generation)")
     (is (= (hexish-code 1) "1"))
     (is (= (hexish-code 0) "0"))
     (is (thrown? AssertionError (hexish-code -1)))
