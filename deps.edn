@@ -2,10 +2,10 @@
         eigenhombre/namejen {:mvn/version "0.1.12"}
         uswitch/lambada {:mvn/version "0.1.2"}
         cheshire {:mvn/version "5.8.1"}}
- :outdated {:extra-deps {olical/depot {:mvn/version "RELEASE"}}
-            :main-opts ["-m" "depot.outdated.main"]}
  :aliases {:uberjar {:extra-deps {seancorfield/depstar {:mvn/version "RELEASE"}}
                      :main-opts ["-m" "hf.depstar.uberjar"]}
+           :outdated {:extra-deps {olical/depot {:mvn/version "RELEASE"}}
+                      :main-opts ["-m" "depot.outdated.main"]}
            :chars {:main-opts ["-m" "trav.core"]}
            :test {:extra-paths ["test"]
                   :extra-deps {com.cognitect/test-runner
