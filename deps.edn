@@ -4,6 +4,11 @@
         cheshire {:mvn/version "5.8.1"}}
  :aliases {:uberjar {:extra-deps {seancorfield/depstar {:mvn/version "RELEASE"}}
                      :main-opts ["-m" "hf.depstar.uberjar"]}
+           :kibit
+           {:extra-deps {lein-kibit {:mvn/version "RELEASE"}
+                         jonase/kibit {:mvn/version "RELEASE"}}
+            :extra-paths ["lint"]
+            :main-opts ["-m" "kibit"]}
            :eastwood
             {:main-opts ["-m" "eastwood.lint" "{:source-paths,[\"src\"]}"]
              :extra-deps {jonase/eastwood {:mvn/version "RELEASE"}}}

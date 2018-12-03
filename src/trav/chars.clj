@@ -298,7 +298,7 @@
   (let [stats (:attributes char)
         {:keys [base-roll dms]} (->> char
                                      :actual-service
-                                     (#(table %)))]
+                                     table)]
     (roll-with-stats-dms-succeeds? base-roll dms stats)))
 
 
@@ -349,7 +349,7 @@
   [{:keys [terms-reached] :as char}]
   (if (= terms-reached 1)
     (-> char add-skill add-skill)
-    (-> char add-skill)))
+    (add-skill char)))
 
 
 (defn add-automatic-skills-for-rank [{service :actual-service
@@ -431,7 +431,7 @@
           stats (:attributes char)
           {:keys [base-roll _]} (->> char
                                      :actual-service
-                                     (#(reinlist %)))
+                                     reinlist)
           roll (d 2)
           reinlisting? (or (= roll 12)
                            (and wants-to-reinlist (>= roll base-roll)))]
@@ -445,12 +445,11 @@
   "
   [char attr]
   (let [a (-> char :attributes attr)]
-    (cond
-     (> a 0) char
-     (>= (d) 8) (assoc-in char [:attributes attr] 1)
-     :else (-> char
-               (assoc :living? false)
-               (assoc-in [:attributes attr] 0)))))
+    (cond (pos? a) char
+          (>= (d) 8) (assoc-in char [:attributes attr] 1)
+          :else (-> char
+                    (assoc :living? false)
+                    (assoc-in [:attributes attr] 0)))))
 
 
 (defn apply-age-to-attribute [char attr]
@@ -499,9 +498,7 @@
   (if (= possession 'Blade)
     (let [skills (keys (:skills char))
           match (some (set skills) blades)]
-      (if match
-        match
-        (rand-nth blades)))
+      (or match (rand-nth blades)))
     possession))
 
 
@@ -509,9 +506,7 @@
   (if (= possession 'Gun)
     (let [skills (keys (:skills char))
           match (some (set skills) guns)]
-      (if match
-        match
-        (rand-nth guns)))
+      (or match (rand-nth guns)))
     possession))
 
 
@@ -536,7 +531,7 @@
     :as char}]
   (if-not alive
     char
-    (let [rolls (cond (= rank 0) terms
+    (let [rolls (cond (zero? rank) terms
                       (< rank 3) (inc terms)
                       :else (+ 2 terms))
           cash-rolls (->> rolls
@@ -616,23 +611,23 @@
                                rank-name
                                royal-form
                                attributes] :as char}]
-  (let [prefix (if rank-name rank-name prefix)]
-    (apply str `(~@(when prefix [prefix " "])
-                 ~@ (when (and royal-form
-                               (seq surnames))
-                      [royal-form " "])
-                 ~first-name
-                 ~(if (seq surnames) " " "")
-                 ~@(interpose " " surnames)
-                 ~@(when (and (seq surnames)
-                              generation)
-                     [", " generation])
-                 ~({:other ", " :male " (M), " :female " (F), "} gender)
-                 ~age " yrs. old, "
-                 ~(if (= actual-service :other)
-                    ""
-                    (str (name actual-service) ", "))
-                 ~(upp char)))))
+  (let [prefix (or rank-name prefix)]
+    (clojure.string/join `(~@(when prefix [prefix " "])
+                           ~@ (when (and royal-form
+                                         (seq surnames))
+                                [royal-form " "])
+                           ~first-name
+                           ~(if (seq surnames) " " "")
+                           ~@(interpose " " surnames)
+                           ~@(when (and (seq surnames)
+                                        generation)
+                               [", " generation])
+                           ~({:other ", " :male " (M), " :female " (F), "} gender)
+                           ~age " yrs. old, "
+                           ~(if (= actual-service :other)
+                              ""
+                              (str (name actual-service) ", "))
+                           ~(upp char)))))
 
 
 ;; Example - character names + UPPs:
