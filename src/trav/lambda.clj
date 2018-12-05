@@ -28,11 +28,11 @@
 
 
 (deflambdafn trav.lambda.Characters [in out ctx]
-  (let [params (->> in
-                    slurp
-                    json/parse-string
-                    clojure.walk/keywordize-keys
-                    :queryStringParameters)
+  (let [params (some->> in
+                        slurp
+                        json/parse-string
+                        clojure.walk/keywordize-keys
+                        :queryStringParameters)
         language (:lang params)
         n (or (some-> params :n Integer.) 10)]
     (json/generate-stream
