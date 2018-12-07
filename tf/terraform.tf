@@ -25,9 +25,9 @@ resource "aws_s3_bucket" "jar_bucket" {
 resource "aws_s3_bucket_object" "jar_file" {
   bucket = "eigenhombre_jars"
   depends_on = ["aws_s3_bucket.jar_bucket"]
-  key    = "trav.jar"
-  source = "../target/trav.jar"
-  etag   = "${md5(file("../target/trav.jar"))}"
+  key    = "trav.zip"
+  source = "../trav.zip"
+  etag   = "${md5(file("../trav.zip"))}"
 }
 
 
@@ -52,11 +52,11 @@ EOF
 }
 
 resource "aws_lambda_function" "test_lambda" {
-  filename         = "../target/trav.jar"
+  filename         = "../trav.zip"
   function_name    = "Characters"
   role             = "${aws_iam_role.iam_for_lambda.arn}"
   handler          = "trav.lambda.Characters"
-  source_code_hash = "${base64sha256(file("../target/trav.jar"))}"
+  source_code_hash = "${base64sha256(file("../trav.zip"))}"
   runtime          = "java8"
   timeout          = 100
   memory_size      = 1024
