@@ -1,4 +1,5 @@
-*jar
+*.jar
+*.zip
 .cpcache
 .nrepl-port
 /.lein-deps-sum
