@@ -21,4 +21,11 @@
                                 "https://github.com/Olical/test-runner.git"
                                 :sha
                                 "7c4f5bd4987ec514889c7cd7e3d13f4ef95f256b"}}
-                  :main-opts ["-m" "cognitect.test-runner"]}}}
+                  :main-opts ["-m" "cognitect.test-runner"]}
+           :aot {:extra-paths ["classes"]
+                 :main-opts ["-e" "(compile,'trav.lambda)"]}
+           :pack
+           {:extra-deps
+            {pack/pack.alpha {:git/url "https://github.com/juxt/pack.alpha.git"
+                              :sha "24863d1ff5a54bb7cc783ff62272212b51c8b316"}}
+                  :main-opts ["-m"]}}}
