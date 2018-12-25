@@ -1,4 +1,4 @@
-{:deps {org.clojure/clojure {:mvn/version "1.9.0"}
+{:deps {org.clojure/clojure {:mvn/version "1.10.0"}
         eigenhombre/namejen {:mvn/version "0.1.12"}
         uswitch/lambada {:mvn/version "0.1.2"}
         cheshire {:mvn/version "5.8.1"}}
