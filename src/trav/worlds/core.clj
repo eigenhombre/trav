@@ -1,7 +1,8 @@
 (ns trav.worlds.core
   (:require [namejen.names :refer [generic-name]]
             [trav.dice :refer [d]]
-            [trav.worlds.tables :as t]))
+            [trav.worlds.tables :as t]
+            [clojure.string :as str]))
 
 (defn- bracketed-lookup
   "
@@ -245,6 +246,16 @@
     (assoc star :orbits
            (sort-by :num (concat orbits capture-orbits)))))
 
+(defn world-name []
+  (let [n (-> 5
+              rand-int
+              rand-int
+              rand-int
+              inc)]
+    (str/join " " (repeatedly n generic-name))))
+
+;; FIXME: GGs CAN be in the inner zones if habitable and outer orbits
+;; are filled.
 (defn place-ggs [{:keys [orbits] :as star}]
   (let [gg-present? (= 'yes (t/gas-giant-present (d)))
         num-ggs (t/gas-giant-qty (d))
@@ -276,8 +287,77 @@
               :else
               (recur (dec n) (update orbits which-orbit
                                      assoc :type_ :gg,
+                                     :name_ (world-name)
                                      :size (rand-nth [:large :small]))))))]
     (assoc star :orbits orbits-with-ggs)))
+
+(defn place-planetoids [{:keys [orbits] :as star}]
+  (let [nonempty-orbits (remove :empty? orbits)
+        is-gg? (comp (partial = :gg) :type_)
+        gg-orbits (filter is-gg? nonempty-orbits)
+        available-orbits (remove is-gg? nonempty-orbits)
+        num-ggs (count gg-orbits)
+        present? (= 'yes (t/planetoid-present (- (d) num-ggs)))
+        num-planetoids (min (count available-orbits)
+                            (or (t/planetoid-qty (- (d) 0 num-ggs )) 0))
+        shuffled (shuffle orbits)
+        planetoid-orbits (->> shuffled
+                              (take num-planetoids)
+                              (map (fn [m] (assoc m
+                                                  :type_ :planetoid
+                                                  :name_ "Planetoid belt"
+                                                  :size 0))))
+        non-planetoid-orbits (drop num-planetoids shuffled)]
+    (assoc star :orbits (sort-by :num (concat planetoid-orbits
+                                              non-planetoid-orbits)))))
+
+(defn generate-world [star-type orbit-num zone]
+  (let [orbit-size-dm (get {0 -5
+                            1 -4
+                            2 -2} orbit-num 0)
+        type-m-dm (if (= star-type 'M) -2 0)
+        size (max 0 (+ (d) -2 orbit-size-dm type-m-dm))
+        atmo-dm (case zone
+                  :inner -2
+                  :outer -4
+                  0)
+        atmo (cond
+               (zero? size) 0
+               ;; The rules have something goofy about two orbits away
+               ;; from the habitable zone, but I think that's a little
+               ;; crazy, so just pick Exotic atmo one out of 36 times.
+               (= (d) 12) 10
+               :else (if (zero? size) 0 (max 0 (+ (d) -7 size atmo-dm))))
+        hydro-dm (+ (if (= zone :outer) -2 0)
+                    (if (or (< atmo 2) (> atmo 9)) -4 0))
+        hydro (cond
+                (zero? size) 0
+                (= zone :inner) 0
+                :else (-> (d)
+                          (+ -7 size hydro-dm)
+                          (max 0)
+                          (min 10)))
+        pop-dm (+ (if (= zone :inner) -5 0)
+                  (if (= zone :outer) -3 0)
+                  (if (not (#{0 5 6 8} atmo)) -2 0))
+        pop (max 0 (+ (d) -2 pop-dm))]
+    {:type_ :planet
+     :name_ (world-name)
+     :size size
+     :atmosphere atmo
+     :hydrographics hydro
+     :population pop}))
+
+(defn place-worlds [star]
+  (assoc star
+         :orbits
+         (for [{:keys [empty? zone type_ num] :as o} (:orbits star)]
+           (if (and (not empty?)
+                    (not type_)
+                    (not (= zone :scorched))
+                    (not (= zone :inside-star)))
+             (merge o (generate-world (:type_ star) num zone))
+             o))))
 
 (defn gen-system []
   ;;                               CHECKLIST:
@@ -287,18 +367,26 @@
        set-orbits                  ;; 2 E,F
        (map set-empty-orbits)      ;; 2 G
        (map set-captured-planets)  ;; 2 G
-       (map place-ggs)             ;; 2 H
+       (map place-ggs)             ;; 2 H, 3 A
+       (map place-planetoids)      ;; 2 I, 3 B
+       (map place-worlds)          ;; 4 A B
        ))
 
-#_(dotimes [_ 100] (with-out-str (pr (gen-system))))
-
-#_(->> gen-system
-       (repeatedly 3000)
-       (mapcat (partial map :orbits))
-       (map (partial filter :type_))
-       (map count)
-       frequencies)
-;;=>
-'{:inner 599, :habitable 182, :outer 1888, :inside-star 63, :scorched 25}
-
 (gen-system)
+
+(defn many-orbits
+  "
+  For testing
+  "
+  [n]
+  (->> gen-system
+       (repeatedly n)
+       (mapcat (partial mapcat :orbits))))
+
+(->> 10
+     many-orbits
+     (map :population)
+     sort
+     set)
+;;=>
+'#{nil 0 7 1 4 6 3 2 5 8}
