@@ -142,33 +142,6 @@
            'K -2
            0))))
 
-(defn orbits [{:keys [is-primary? size type_ subtype orbit] :as star}]
-  (let [max-orbit (-> (d)
-                      (+ (condp = size
-                           'III 4
-                           'Ia  8
-                           'Ib  8
-                           'II  8
-                           0))
-                      (+ (condp = type_
-                           'M -4
-                           'K -2
-                           0)))
-        orbit-around-primary (:orbit star)
-        max-orbit (if (and (not is-primary?)
-                           orbit-around-primary)
-                    (min max-orbit (int (/ orbit-around-primary 2)))
-                    max-orbit)
-        orbits-seq (range 0 (inc max-orbit))
-        orbit-map (zipmap orbits-seq
-                          (map (fn [o] {:zone (lookup-zone size type_ subtype o)
-                                        :available true})
-                               orbits-seq))]
-    (assoc star :orbits )
-    (-> star
-        (assoc :orbits orbit-map)
-        (assoc :secondaries (map orbits (:secondaries star))))))
-
 (defn orbit-allowed-for-primary [primary-orbit orbit]
   {:pre [(number? primary-orbit)
          (number? orbit)]}
