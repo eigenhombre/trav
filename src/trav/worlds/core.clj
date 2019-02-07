@@ -54,8 +54,8 @@
       :subtype subtype
       :size (get-size-for-type t/secondary-size type_ subtype size-roll)})))
 
-(defn name-system [sys]
-  (assoc sys :name (generic-name)))
+(defn name-star [sys]
+  (assoc sys :name_ (generic-name)))
 
 (defn zone-sym-to-kw [s]
   ({'I :inner
@@ -174,7 +174,7 @@
                            {:num o
                             :zone (lookup-zone size type_ subtype o)}))))))
 
-(defn set-empty-orbits [{:keys [type_ orbits] :as star}]
+(defn set-empty-orbits [{:keys [type_ orbits zone] :as star}]
   (let [dm (if (#{'A 'B} type_) 1 0)
         has-empty? (>= (+ (d 1) dm) 5)
         empty-orbits-table {1 1, 2 1, 3 2, 4 3, 5 3, 6 3, 7 3}
@@ -193,8 +193,10 @@
                              (recur (conj empties candidate-orbit)
                                     (inc n))))))]
     (assoc star :orbits
-           (for [o orbits]
-             (assoc o :empty? (boolean (empty-orbits (:num o))))))))
+           (for [{:keys [zone] :as o} orbits]
+             (assoc o :empty? (or (= zone :inside-star)
+                                  (= zone :scorched)
+                                  (boolean (empty-orbits (:num o)))))))))
 
 (defn set-captured-planets [{:keys [size type_ subtype orbits] :as star}]
   (let [dm (if (#{'A 'B} type_) 1 0)
@@ -208,12 +210,15 @@
                                    io-num (int o-num)
                                    o-num (if (= (float io-num)
                                                 o-num)
-                                           io-num o-num)]
+                                           io-num o-num)
+                                   zone (lookup-zone size type_ subtype io-num)]
                              :when (and (> o-num 0)
                                         (not (some #{o-num}
-                                                   (map :num orbits))))]
+                                                   (map :num orbits)))
+                                        (not (= :inside-star zone))
+                                        (not (= :scorched zone)))]
                          {:num o-num
-                          :zone (lookup-zone size type_ subtype io-num)
+                          :zone zone
                           :empty? false
                           :captured? true})]
     (assoc star :orbits
@@ -264,6 +269,12 @@
                                      :size (rand-nth [:large :small]))))))]
     (assoc star :orbits orbits-with-ggs)))
 
+(defn population [zone atmosphere]
+  (let [pop-dm (+ (if (= zone :inner) -5 0)
+                  (if (= zone :outer) -3 0)
+                  (if (not (#{0 5 6 8} atmosphere)) -2 0))]
+    (max 0 (+ (d) -2 pop-dm))))
+
 (defn place-planetoids [{:keys [orbits] :as star}]
   (let [nonempty-orbits (remove :empty? orbits)
         is-gg? (comp (partial = :gg) :type_)
@@ -279,6 +290,11 @@
                               (map (fn [m] (assoc m
                                                   :type_ :planetoid
                                                   :name_ "Planetoid belt"
+                                                  :atmosphere 0
+                                                  :hydrographics 0
+                                                  :population (population
+                                                               (:zone m)
+                                                               0)
                                                   :size 0))))
         non-planetoid-orbits (drop num-planetoids shuffled)]
     (assoc star :orbits (sort-by :num (concat planetoid-orbits
@@ -309,17 +325,13 @@
                 :else (-> (d)
                           (+ -7 size hydro-dm)
                           (max 0)
-                          (min 10)))
-        pop-dm (+ (if (= zone :inner) -5 0)
-                  (if (= zone :outer) -3 0)
-                  (if (not (#{0 5 6 8} atmo)) -2 0))
-        pop (max 0 (+ (d) -2 pop-dm))]
+                          (min 10)))]
     {:type_ :planet
      :name_ (world-name)
      :size size
      :atmosphere atmo
      :hydrographics hydro
-     :population pop}))
+     :population (population zone atmo)}))
 
 (defn place-worlds [star]
   (assoc star
@@ -332,22 +344,7 @@
              (merge o (generate-world (:type_ star) num zone))
              o))))
 
-(defn gen-system []
-  ;;                               CHECKLIST:
-  (->> (stars)                     ;; Steps 2 A,B,C
-       (map name-system)           ;;
-       set-companion-orbits        ;; 2 D
-       set-orbits                  ;; 2 E,F
-       (map set-empty-orbits)      ;; 2 G
-       (map set-captured-planets)  ;; 2 G
-       (map place-ggs)             ;; 2 H, 3 A
-       (map place-planetoids)      ;; 2 I, 3 B
-       (map place-worlds)          ;; 4 A B
-       ))
-
-(gen-system)
-
-(defn many-orbits
+(defn- many-orbits
   "
   For testing
   "
@@ -356,6 +353,54 @@
        (repeatedly n)
        (mapcat (partial mapcat :orbits))))
 
+(defn determine-main-world [system]
+  ;; FIXME: consider moons as well
+  (let [[_ _ _ i j]
+        (->> (for [[i star] (map-indexed vector system)
+                   [j orbit] (map-indexed vector (:orbits star))]
+               [(or (:population orbit) 0) (:zone orbit) (:num orbit) i j])
+             (sort-by (juxt (comp - first)
+                            second
+                            (comp - #(or (nth % 2) 0))))
+             first)]
+    (if (and i j)
+      (update-in (vec system) [i :orbits]
+                 (comp #(assoc-in % [j :is-main-world?] true) vec))
+      system)))
+
+(defn determine-main-world-attribs [star]
+  (update star :orbits
+          (fn [orbits]
+            (map (fn [{:keys [is-main-world? population] :as o}]
+                   (if is-main-world?
+                     (let [govt (max 0 (+ (d) -7 (or population 0)))
+                           ll (max 0 (+ (d) -7 govt))]
+                       (assoc o
+                              :government govt
+                              :law-level ll
+                              :starport (t/starports (d))))
+                     ;; FIXME: Handle non main-worlds
+                     (assoc o
+                            :government 0
+                            :law-level 0
+                            :starport 'Y)))
+                 orbits))))
+
+(defn gen-system []
+  ;;                                       CHECKLIST:
+  (->> (stars)                             ;; Steps 2 A,B,C
+       (map name-star)                     ;;
+       set-companion-orbits                ;; 2 D
+       set-orbits                          ;; 2 E,F
+       (map set-empty-orbits)              ;; 2 G
+       (map set-captured-planets)          ;; 2 G
+       (map place-ggs)                     ;; 2 H, 3 A
+       (map place-planetoids)              ;; 2 I, 3 B
+       (map place-worlds)                  ;; 4 A B
+       determine-main-world                ;; 7
+       (map determine-main-world-attribs)  ;; 7 A-G
+       ))
+
 (->> 10
      many-orbits
      (map :population)
@@ -363,3 +408,62 @@
      set)
 ;;=>
 '#{nil 0 7 1 4 6 3 2 5 8}
+
+(defn to-hex [n] (get {10 "A" 11 "B" 12 "C" 13 "D" 14 "E" 15 "F"} n n))
+
+(defn size-code [{:keys [size type_] :as w}]
+  (case type_
+    :planet (if (= size 0)
+              "S"
+              (to-hex size))
+    :planetoid "0"))
+
+(defn upp [{:keys [starport size atmosphere hydrographics
+                   type_ population government law-level] :as w}]
+  (if (= type_ :gg)
+    (str (clojure.string/capitalize (name size)) " GG")
+    (str starport
+         (size-code w)
+         (to-hex atmosphere)
+         (to-hex hydrographics)
+         (to-hex population)
+         (to-hex government)
+         (to-hex law-level))))
+
+(defn system-str [system]
+  (let [col-lengths [10 4 20 10 1 1 30]
+        fmt-str (clojure.string/join
+                 " " (repeat (count col-lengths) "%%%ds"))
+        cfmt (partial format (apply (partial format fmt-str) col-lengths))]
+    (clojure.string/join
+     "\n"
+     (cons (cfmt "Orbit" "" "Name" "UPP" "" "" "Remarks")
+           (apply concat
+                  (for [{:keys [is-primary? empty? type_ size
+                                subtype name_ orbits]}
+                        system]
+                    (cons
+                     (cfmt (if is-primary?
+                             "Primary"
+                             "Companion")
+                           ""
+                           name_
+                           (str type_ subtype " " size)
+                           ""
+                           ""
+                           "This is my star.")
+                     (for [{:keys [num name_ empty? is-main-world?] :as o}
+                           orbits
+                           :when (not empty?)]
+                       (cfmt (str
+                              (if is-main-world? "*" "")
+                              (if (double? num)
+                                (format "%.1f" num)
+                                (str num)))
+                             ""
+                             (or name_ "")
+                             (upp o)
+                             "" "" "")))))))))
+
+(println "_____________________")
+(println (system-str (gen-system)))

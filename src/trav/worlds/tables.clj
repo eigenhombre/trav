@@ -95,6 +95,14 @@
   r3-4 2
   r5-6 3)
 
+(def-range-table starports
+  r2-4 A
+  r5-6 B
+  r7-8 C
+  9 D
+  r10-11 E
+  12 X)
+
 (def-zone-table size-Ia
   #_0 B0 B5 A0 A5 F0 F5 G0 G5 K0 K5 M0 M5 M9
   1   -- --  -  -  -  -  -  -  -  -  -  -  -
