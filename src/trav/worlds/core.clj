@@ -347,15 +347,6 @@
              (merge o (generate-world (:type_ star) num zone))
              o))))
 
-(defn- many-orbits
-  "
-  For testing
-  "
-  [n]
-  (->> gen-system
-       (repeatedly n)
-       (mapcat (partial mapcat :orbits))))
-
 (defn determine-main-world [system]
   ;; FIXME: consider moons as well
   (let [[_ _ _ i j]
@@ -403,6 +394,15 @@
        determine-main-world                ;; 7
        (map determine-main-world-attribs)  ;; 7 A-G
        ))
+
+(defn- many-orbits
+  "
+  For testing
+  "
+  [n]
+  (->> gen-system
+       (repeatedly n)
+       (mapcat (partial mapcat :orbits))))
 
 (->> 10
      many-orbits
