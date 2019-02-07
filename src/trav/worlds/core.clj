@@ -433,41 +433,54 @@
          (to-hex government)
          (to-hex law-level))))
 
-(defn system-str [system]
-  (let [col-lengths [10 4 20 10 1 1 30]
+(defn table-str
+  "
+  (table-str [[1 2 33], [666 444 2]])
+  ;;=>
+  \"  1   2 33
+  666 444  2\"
+  "
+  [rows]
+  (let [col-lengths (for [col (range (count (first rows)))]
+                      (->> rows
+                           (map (comp count str #(nth % col)))
+                           (apply max)))
         fmt-str (clojure.string/join
-                 " " (repeat (count col-lengths) "%%%ds"))
-        cfmt (partial format (apply (partial format fmt-str) col-lengths))]
-    (clojure.string/join
-     "\n"
-     (cons (cfmt "Orbit" "" "Name" "UPP" "" "" "Remarks")
-           (apply concat
-                  (for [{:keys [is-primary? empty? type_ size
-                                subtype name_ orbits]}
-                        system]
-                    (cons
-                     (cfmt (if is-primary?
-                             "Primary"
-                             "Companion")
-                           ""
-                           name_
-                           (str type_ subtype " " size)
-                           ""
-                           ""
-                           "This is my star.")
-                     (for [{:keys [num name_ empty? is-main-world?] :as o}
-                           orbits
-                           :when (not empty?)]
-                       (cfmt (str
-                              (if is-main-world? "*" "")
-                              (if (double? num)
-                                (format "%.1f" num)
-                                (str num)))
-                             ""
-                             (or name_ "")
-                             (upp o)
-                             "" "" "")))))))))
+                 (for [cl col-lengths]
+                   (if (zero? cl)
+                     "%1s"
+                     (str " %" cl "s"))))]
+    (->> rows
+         (map (partial apply format fmt-str))
+         (map clojure.string/trimr)
+         (clojure.string/join "\n"))))
 
-(dotimes [_ 5]
-  (println "_____________________")
-  (println (system-str (gen-system))))
+(defn system-str [system]
+  (table-str
+   (cons ["Orbit" "" "Name" "UPP" "" "" "Remarks"]
+         (apply concat
+                (for [{:keys [is-primary? empty? type_ size
+                              subtype name_ orbits]}
+                      system]
+                  (cons
+                   [(if is-primary?
+                      "Primary"
+                      "Companion")
+                    ""
+                    name_
+                    (str type_ subtype " " size)
+                    "" "" ""]
+                   (for [{:keys [num name_ empty? is-main-world?] :as o}
+                         orbits
+                         :when (not empty?)]
+                     [(str
+                       (if is-main-world? "*" "")
+                       (if (double? num)
+                         (format "%.1f" num)
+                         (str num)))
+                      "" (or name_ "") (upp o) "" "" ""])))))))
+
+(comment
+  (dotimes [_ 5]
+    (println "_____________________")
+    (println (system-str (gen-system)))))
