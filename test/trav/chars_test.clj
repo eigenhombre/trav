@@ -68,7 +68,7 @@
 
 (deftest mustering-out
   (testing "Being in the service earns you money"
-    (is (< 0.5E6
+    (is (< 0.5E5
            (->> make-living-character
                 (repeatedly 100)
                 (map :credits)
