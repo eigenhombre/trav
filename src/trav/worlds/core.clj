@@ -225,12 +225,15 @@
            (sort-by :num (concat orbits capture-orbits)))))
 
 (defn world-name []
-  (let [n (-> 5
-              rand-int
-              rand-int
-              rand-int
-              inc)]
-    (str/join " " (repeatedly n generic-name))))
+  (case (rand-int 20)
+    0 (str (generic-name) "'s World")
+    1 (str "The " (generic-name))
+    (let [n (-> 5
+                rand-int
+                rand-int
+                rand-int
+                inc)]
+      (str/join " " (repeatedly n generic-name)))))
 
 ;; FIXME: GGs CAN be in the inner zones if habitable and outer orbits
 ;; are filled.
@@ -465,5 +468,6 @@
                              (upp o)
                              "" "" "")))))))))
 
-(println "_____________________")
-(println (system-str (gen-system)))
+(dotimes [_ 5]
+  (println "_____________________")
+  (println (system-str (gen-system))))
