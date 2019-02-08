@@ -225,7 +225,7 @@
            (sort-by :num (concat orbits capture-orbits)))))
 
 (defn world-name []
-  (case (rand-int 20)
+  (case (rand-int 40)
     0 (str (generic-name) "'s World")
     1 (str "The " (generic-name))
     (let [n (-> 5
@@ -380,6 +380,24 @@
                             :starport 'Y)))
                  orbits))))
 
+(defn gen-satellites-for-world [{:keys [size type_] :as world}]
+  (let [num-sats
+        (max 0 (cond
+                 (not size) 0
+                 (= type_ :planetoid) 0
+                 (= type_ :planet) (if (zero? size) 0 (- (d 1) 3))
+                 (= type_ :gg)
+                 (- (d) (if (= size :large) 0 4))))]
+    (assoc world :satellites
+           (sort-by :num
+                    (for [_ (range num-sats)]
+                      ;; FIXME: determine orbit correctly
+                      {:num (rand-int 10)
+                       :name_ (world-name)})))))
+
+(defn gen-satellites-for-star [star]
+  (update star :orbits (partial map gen-satellites-for-world)))
+
 (defn gen-system []
   ;;                                       CHECKLIST:
   (->> (stars)                             ;; Steps 2 A,B,C
@@ -393,6 +411,7 @@
        (map place-worlds)                  ;; 4 A B
        determine-main-world                ;; 7
        (map determine-main-world-attribs)  ;; 7 A-G
+       (map gen-satellites-for-star)
        ))
 
 (defn- many-orbits
@@ -470,17 +489,21 @@
                     name_
                     (str type_ subtype " " size)
                     "" "" ""]
-                   (for [{:keys [num name_ empty? is-main-world?] :as o}
-                         orbits
-                         :when (not empty?)]
-                     [(str
-                       (if is-main-world? "*" "")
-                       (if (double? num)
-                         (format "%.1f" num)
-                         (str num)))
-                      "" (or name_ "") (upp o) "" "" ""])))))))
+                   (apply concat
+                          (for [{:keys [num name_ empty?
+                                        is-main-world? satellites] :as o} orbits
+                                :when (not empty?)]
+                            (cons
+                             [(str
+                               (if is-main-world? "*" "")
+                               (if (double? num)
+                                 (format "%.1f" num)
+                                 (str num)))
+                              "" (or name_ "") (upp o) "" "" ""]
+                             (for [{:keys [num name_]} satellites]
+                               ["" num name_ "" "" "" ""]))))))))))
 
-(comment
-  (dotimes [_ 5]
-    (println "_____________________")
-    (println (system-str (gen-system)))))
+(comment)
+(dotimes [_ 5]
+  (println "_____________________")
+  (println (system-str (gen-system))))
