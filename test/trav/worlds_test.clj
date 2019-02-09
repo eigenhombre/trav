@@ -80,14 +80,14 @@
 (deftest gas-giants
   (let [several-systems (take 100 (systems))]
     (testing "Avg. number of gas giants should be 3.3 or so"
-      (is (< 2.7
+      (is (< 2.0
              (->> several-systems
                   (map num-gg)
                   average
                   double)
              3.7)))
     (testing "Secondaries should have gas giants, too."
-      (is (< 2.7
+      (is (< 2.0
              (->> several-systems
                   (map num-gg)
                   average
@@ -113,7 +113,8 @@
              empty))))
 
 (deftest restrictions-on-orbits
-  (testing "In a system with companion in orbit 2, orbits 0 and 4 are available..."
+  (testing (str "In a system with companion in orbit 2, "
+                "orbits 0 and 4 are available...")
     (let [orbits
           (->> (systems)
                (filter (comp (partial = 1) count :secondaries))
