@@ -227,7 +227,19 @@
 (defn world-name []
   (case (rand-int 40)
     0 (str (generic-name) "'s World")
-    1 (str "The " (generic-name))
+    1 (str (rand-nth ["The "
+                      "The "
+                      "The "
+                      "The "
+                      "Le "
+                      "La "
+                      "Il "
+                      "l'"
+                      "Der "
+                      "Den "
+                      "Das "
+                      "Ul "  ;; Bezel
+                      ]) (generic-name))
     (let [n (-> 5
                 rand-int
                 rand-int
@@ -380,6 +392,64 @@
                             :starport 'Y)))
                  orbits))))
 
+(defn satellite-size [{:keys [size type_] :as w}]
+  (let [size-num
+        (if (= type_ :gg)
+          (if (= size :small)
+            (- (d) 6)
+            (- (d) 4))
+          (- size (d 1)))]
+    (cond
+      (neg? size-num) :small
+      (zero? size-num) :ring
+      :else size-num)))
+
+(def satellite-orbits
+  (let [cols [#_0 :close :far :extreme
+              2   3       15  75
+              3   4       20  100
+              4   5       25  125
+              5   6       30  150
+              6   7       35  175
+              7   8       40  200
+              8   9       45  225
+              9  10       50  250
+              10 11       55  275
+              11 12       60  300
+              12 13       65  325]
+        col-names (take 3 cols)]
+    (into {}
+          (apply concat
+                 (for [[roll c f e] (partition 4 (drop 3 cols))]
+                   [[[:close roll] c]
+                    [[:far roll] f]
+                    [[:extreme roll] e]])))))
+
+(defn ring-orbit []
+  (condp = (d 1)
+    1 1
+    2 1
+    3 1
+    4 2
+    5 2
+    6 3))
+
+(defn satellite-orbit [{:keys [type_] :as world} index sat-size]
+  (if (= sat-size :ring)
+    (ring-orbit)
+    (let [_ (assert (or (= sat-size :small)
+                        (number? sat-size)))
+          roll (d)
+          orbit-type (cond
+                       (and (= type_ :gg) (= roll 12)) :extreme
+                       (> roll 7) :far
+                       :else :close)
+          roll-w-dm (->> index
+                         (- roll)
+                         (max 2)
+                         (min 12))]
+      (satellite-orbits [orbit-type roll-w-dm]))))
+
 (defn gen-satellites-for-world [{:keys [size type_] :as world}]
   (let [num-sats
         (max 0 (cond
@@ -387,13 +457,24 @@
                  (= type_ :planetoid) 0
                  (= type_ :planet) (if (zero? size) 0 (- (d 1) 3))
                  (= type_ :gg)
-                 (- (d) (if (= size :large) 0 4))))]
-    (assoc world :satellites
-           (sort-by :num
-                    (for [_ (range num-sats)]
-                      ;; FIXME: determine orbit correctly
-                      {:num (rand-int 10)
-                       :name_ (world-name)})))))
+                 (- (d) (if (= size :large) 0 4))))
+        satellites
+        (loop [index 0
+               orbits #{}
+               ret []]
+          (if (>= index (dec num-sats))
+            (sort-by :num ret)
+            (let [sat-size (satellite-size world)
+                  orbit (satellite-orbit world index sat-size)]
+              (if (orbits orbit)
+                (recur index orbits ret)
+                (recur (inc index)
+                       (conj orbits orbit)
+                       (conj ret {:type_ :satellite
+                                  :size sat-size
+                                  :num orbit
+                                  :name_ (world-name)}))))))]
+    (assoc world :satellites satellites)))
 
 (defn gen-satellites-for-star [star]
   (update star :orbits (partial map gen-satellites-for-world)))
@@ -438,6 +519,11 @@
     :planet (if (= size 0)
               "S"
               (to-hex size))
+    ;; FIXME: Ugly w.r.t prev lines:
+    :satellite (cond
+                 (= size :ring) "R"
+                 (= size :small) "S"
+                 :else (to-hex size))
     :planetoid "0"))
 
 (defn upp [{:keys [starport size atmosphere hydrographics
@@ -500,8 +586,8 @@
                                  (format "%.1f" num)
                                  (str num)))
                               "" (or name_ "") (upp o) "" "" ""]
-                             (for [{:keys [num name_]} satellites]
-                               ["" num name_ "" "" "" ""]))))))))))
+                             (for [{:keys [num name_ size] :as sat} satellites]
+                               ["" num name_ (upp sat) "" "" ""]))))))))))
 
 (comment)
 (dotimes [_ 5]
