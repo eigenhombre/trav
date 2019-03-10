@@ -450,7 +450,45 @@
                          (min 12))]
       (satellite-orbits [orbit-type roll-w-dm]))))
 
-(defn gen-satellites-for-world [{:keys [size type_] :as world}]
+(defn add-satellite-atmo [{:keys [size] :as sat} {:keys [zone]}]
+  (let [atmo
+        (condp = size
+          0 0
+          1 0
+          :ring 0
+          :small 0
+          (let [dm (if (#{:inner :outer} zone) -4 0)
+                roll (+ (d) size -7 dm)]
+            (max 0 roll)))]
+    (assoc sat :atmosphere atmo)))
+
+(defn add-satellite-hydro [{:keys [size atmosphere] :as sat} {:keys [zone]}]
+  (let [hydro (if (or (= zone :inner)
+                      (#{0 :ring :small} size))
+                0
+                (let [dm (+ (if (= zone :outer) -4 0)
+                            (if (or (< atmosphere 2)
+                                    (> atmosphere 9))
+                              4
+                              0))
+                      roll (+ (d) -7 dm)]
+                  (max 0 roll)))]
+    (assoc sat :hydrographics hydro)))
+
+(defn add-satellite-pop [{:keys [size atmosphere] :as sat} {:keys [zone]}]
+  (let [pop (if (= :ring size)
+              0
+              (let [roll (- (d) 2)
+                    dm (+ (condp = zone
+                            :inner -5
+                            :outer -4
+                            0)
+                          (if (or (= :small size) (< size 5)) -2 0)
+                          (if-not (#{5 6 8} atmosphere) -2 0))]
+                (max 0 (+ roll dm))))]
+    (assoc sat :population pop)))
+
+(defn gen-satellites-for-world [{:keys [zone size type_] :as world}]
   (let [num-sats
         (max 0 (cond
                  (not size) 0
@@ -468,12 +506,16 @@
                   orbit (satellite-orbit world index sat-size)]
               (if (orbits orbit)
                 (recur index orbits ret)
-                (recur (inc index)
-                       (conj orbits orbit)
-                       (conj ret {:type_ :satellite
-                                  :size sat-size
-                                  :num orbit
-                                  :name_ (world-name)}))))))]
+                (let [sat (-> {:type_ :satellite
+                               :size sat-size
+                               :num orbit
+                               :name_ (world-name)}
+                              (add-satellite-atmo world)
+                              (add-satellite-hydro world)
+                              (add-satellite-pop world))]
+                  (recur (inc index)
+                         (conj orbits orbit)
+                         (conj ret sat)))))))]
     (assoc world :satellites satellites)))
 
 (defn gen-satellites-for-star [star]
