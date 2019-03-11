@@ -359,38 +359,80 @@
              (merge o (generate-world (:type_ star) num zone))
              o))))
 
-(defn determine-main-world [system]
-  ;; FIXME: consider moons as well
-  (let [[_ _ _ i j]
-        (->> (for [[i star] (map-indexed vector system)
-                   [j orbit] (map-indexed vector (:orbits star))]
-               [(or (:population orbit) 0) (:zone orbit) (:num orbit) i j])
-             (sort-by (juxt (comp - first)
-                            second
-                            (comp - #(or (nth % 2) 0))))
-             first)]
-    (if (and i j)
-      (update-in (vec system) [i :orbits]
-                 (comp #(assoc-in % [j :is-main-world?] true) vec))
-      system)))
+(defn assoc-in* [m [k & ks] v]
+  (let [m (if (map? m) m (vec m))]
+    (if ks
+      (assoc m k (assoc-in* (get m k) ks v))
+      (assoc m k v))))
 
-(defn determine-main-world-attribs [star]
-  (update star :orbits
-          (fn [orbits]
-            (map (fn [{:keys [is-main-world? population] :as o}]
-                   (if is-main-world?
-                     (let [govt (max 0 (+ (d) -7 (or population 0)))
-                           ll (max 0 (+ (d) -7 govt))]
-                       (assoc o
-                              :government govt
-                              :law-level ll
-                              :starport (t/starports (d))))
-                     ;; FIXME: Handle non main-worlds
-                     (assoc o
-                            :government 0
-                            :law-level 0
-                            :starport 'Y)))
-                 orbits))))
+(defn main-world-tech-level [starport size atmosphere hydrographics
+                             population government]
+  (let [tech-level-dm (get {"A" 6, "B" 4, "C" 2, "X" -4} starport 0)
+        size-dm (get {0 2, 1 2, 2 1, 3 1, 4 1} size 0)
+        atmosphere-dm (if (#{0 1 2 3 10 11 12 13 14} atmosphere) 1 0)
+        hydrographics-dm (get {9 1, 10 2} hydrographics 0)
+        population-dm (get {1 1, 2 1, 3 1, 4 1, 5 1, 9 2, 10 4} population 0)
+        government-dm (get {0 1, 5 1, 12 -2} government 0)]
+    (+ (d 1)
+       tech-level-dm
+       size-dm
+       atmosphere-dm
+       hydrographics-dm
+       population-dm
+       government-dm)))
+
+(defn select-main-world [system]
+  (let [pop-candidates
+        (for [[i star] (map-indexed vector system)
+              [j orbit] (map-indexed vector (:orbits star))
+              :when (not (:empty? orbit))
+              [k sat] (cons [nil nil]
+                            (map-indexed vector (:satellites orbit)))]
+          (let [zone (:zone orbit)
+                pop-world (:population orbit)
+                pop-sat (:population sat)
+                popu (or (if (nil? sat) pop-world pop-sat) 0)
+                sort-key [popu (not= zone :inner) (- (or (:num orbit) 0))]]
+            {:sort-key sort-key
+             :i i
+             :j j
+             :k k
+             :is-sat? (boolean k)
+             :world orbit
+             :is-gg? (= (:type_ orbit) :gg)
+             :sat sat}))]
+    (->> pop-candidates
+         (sort-by :sort-key)
+         (remove (fn [{:keys [is-sat? is-gg?]}]
+                   (and is-gg? (not is-sat?))))
+         last)))
+
+(defn set-main-world-attribs [world-or-sat]
+  (let [govt (max 0 (+ (d) -7 (:population world-or-sat)))
+        law (max 0 (+ (d) -7 govt))
+        starport (t/starports (d))]
+    (merge world-or-sat
+           {:is-main-world? true
+            :government govt
+            :law-level law
+            :tech-level (main-world-tech-level
+                         starport
+                         (:size world-or-sat)
+                         (:atmosphere world-or-sat)
+                         (:hydrographics world-or-sat)
+                         (:population world-or-sat)
+                         govt)
+            :starport starport})))
+
+(defn define-main-world [system]
+  (let [{:keys [i j k is-sat? world sat sort-key]} (select-main-world system)]
+    (cond
+      is-sat? (assoc-in* system [i :orbits j :satellites k]
+                         (set-main-world-attribs sat))
+      world (assoc-in* system [i :orbits j] (set-main-world-attribs world))
+      :else (do
+              (println "NO MAIN WORLD")
+              system))))
 
 (defn satellite-size [{:keys [size type_] :as w}]
   (let [size-num
@@ -521,40 +563,81 @@
 (defn gen-satellites-for-star [star]
   (update star :orbits (partial map gen-satellites-for-world)))
 
+(defn update-non-main-world [main-world-government
+                             main-world-law-level
+                             main-world-tech-level x]
+  (if-not (and (map? x)
+               (#{:planet :satellite :planetoid}
+                (:type_ x))
+               (not (:is-main-world? x)))
+    x
+    (let [govt (cond
+                 (= main-world-government 6) 6
+                 (> main-world-government 6) (+ (d 1) 2)
+                 :else (d 1))
+          population (or (:population x) 0)
+          spaceport (bracketed-lookup t/spaceports (+ (d 1)
+                                                      (cond
+                                                        (> population 5) 2
+                                                        (= population 1) -2
+                                                        (zero? population) -3
+                                                        :else 0)))
+          ;; FIXME: should = main-world-tech-level if lab or military base:
+          tech-level (if (zero? population)
+                       0
+                       (max 0 (dec main-world-tech-level)))
+          law-level (if (zero? govt)
+                      0
+                      (max 0 (+ main-world-law-level
+                                (d 1)
+                                -3)))]
+      (assoc x
+             :government govt
+             :starport spaceport
+             :law-level law-level
+             :tech-level tech-level))))
+
+(defn find-main-world-in-tree [system]
+  (concat (for [star system
+                orbit (:orbits star)
+                :when (:is-main-world? orbit)]
+            orbit)
+          (for [star system
+                orbit (:orbits star)
+                sat (:satellites orbit)
+                :when (:is-main-world? sat)]
+            sat)))
+
+(defn set-non-main-world-and-sat-attribs [system]
+  (let [[{:keys [government law-level tech-level] :as main-world}]
+        (find-main-world-in-tree system)]
+    (if-not main-world
+      system
+      (clojure.walk/prewalk (partial update-non-main-world
+                                     government
+                                     law-level
+                                     tech-level)
+                            system))))
+
 (defn gen-system []
-  ;;                                       CHECKLIST:
-  (->> (stars)                             ;; Steps 2 A,B,C
-       (map name-star)                     ;;
-       set-companion-orbits                ;; 2 D
-       set-orbits                          ;; 2 E,F
-       (map set-empty-orbits)              ;; 2 G
-       (map set-captured-planets)          ;; 2 G
-       (map place-ggs)                     ;; 2 H, 3 A
-       (map place-planetoids)              ;; 2 I, 3 B
-       (map place-worlds)                  ;; 4 A B
-       determine-main-world                ;; 7
-       (map determine-main-world-attribs)  ;; 7 A-G
-       (map gen-satellites-for-star)
-       ))
+  ;;                                         CHECKLIST:
+  (->> (stars)                               ;; Steps 2 A,B,C
+       (map name-star)                       ;;
+       set-companion-orbits                  ;; 2 D
+       set-orbits                            ;; 2 E,F
+       (map set-empty-orbits)                ;; 2 G
+       (map set-captured-planets)            ;; 2 G
+       (map place-ggs)                       ;; 2 H, 3 A
+       (map place-planetoids)                ;; 2 I, 3 B
+       (map place-worlds)                    ;; 4 A B
+       (map gen-satellites-for-star)         ;; 5, 6
+       define-main-world                     ;; 7
+       set-non-main-world-and-sat-attribs))  ;; 8
 
-(defn- many-orbits
-  "
-  For testing
-  "
-  [n]
-  (->> gen-system
-       (repeatedly n)
-       (mapcat (partial mapcat :orbits))))
-
-(->> 10
-     many-orbits
-     (map :population)
-     sort
-     set)
-;;=>
-'#{nil 0 7 1 4 6 3 2 5 8}
-
-(defn to-hex [n] (get {10 "A" 11 "B" 12 "C" 13 "D" 14 "E" 15 "F"} n n))
+(defn to-hex [n]
+  (get {10 "A" 11 "B" 12 "C" 13 "D" 14 "E" 15 "F" nil "?"}
+       n
+       n))
 
 (defn size-code [{:keys [size type_] :as w}]
   (case type_
@@ -569,19 +652,22 @@
     :planetoid "0"))
 
 (defn upp [{:keys [starport size atmosphere hydrographics
-                   type_ population government law-level] :as w}]
+                   type_ population government law-level tech-level] :as w}]
   (if (= type_ :gg)
-    (str (clojure.string/capitalize (name size)) " GG")
-    (str starport
+    (format "%-10s" (str (clojure.string/capitalize (name size)) " GG"))
+    (str (or starport "?")
          (size-code w)
          (to-hex atmosphere)
          (to-hex hydrographics)
          (to-hex population)
          (to-hex government)
-         (to-hex law-level))))
+         (to-hex law-level)
+         " "
+         (to-hex tech-level))))
 
 (defn table-str
   "
+  Format a table with aligned columns.
   (table-str [[1 2 33], [666 444 2]])
   ;;=>
   \"  1   2 33
@@ -604,7 +690,7 @@
 
 (defn system-str [system]
   (table-str
-   (cons ["Orbit" "" "Name" "UPP" "" "" "Remarks"]
+   (cons ["Orbit" "" "Name" "UPP  " "" "" "Remarks"]
          (apply concat
                 (for [{:keys [is-primary? empty? type_ size
                               subtype name_ orbits]}
@@ -615,7 +701,7 @@
                       "Companion")
                     ""
                     name_
-                    (str type_ subtype " " size)
+                    (format "%-6s" (str type_ subtype " " size))
                     "" "" ""]
                    (apply concat
                           (for [{:keys [num name_ empty?
@@ -628,10 +714,15 @@
                                  (format "%.1f" num)
                                  (str num)))
                               "" (or name_ "") (upp o) "" "" ""]
-                             (for [{:keys [num name_ size] :as sat} satellites]
-                               ["" num name_ (upp sat) "" "" ""]))))))))))
+                             (for [{:keys [num name_ size is-main-world?]
+                                    :as sat} satellites]
+                               ["" (str (if is-main-world? "*" "") num)
+                                name_ (upp sat) "" "" ""]))))))))))
 
-(comment)
-(dotimes [_ 5]
-  (println "_____________________")
-  (println (system-str (gen-system))))
+(comment
+  (try
+    (dotimes [_ 1]
+      (println "_____________________")
+      (println (system-str (gen-system))))
+    (catch Throwable t
+      (println t))))

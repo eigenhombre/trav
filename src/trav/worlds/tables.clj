@@ -103,6 +103,12 @@
   r10-11 E
   12 X)
 
+(def-range-table spaceports
+  r1-2 Y
+  3 H
+  r4-5 G
+  6 F)
+
 (def-zone-table size-Ia
   #_0 B0 B5 A0 A5 F0 F5 G0 G5 K0 K5 M0 M5 M9
   1   -- --  -  -  -  -  -  -  -  -  -  -  -
