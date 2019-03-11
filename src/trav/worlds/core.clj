@@ -1,8 +1,9 @@
 (ns trav.worlds.core
-  (:require [namejen.names :refer [generic-name]]
+  (:require [clojure.string :as str]
+            [clojure.walk]
+            [namejen.names :refer [generic-name]]
             [trav.dice :refer [d]]
-            [trav.worlds.tables :as t]
-            [clojure.string :as str]))
+            [trav.worlds.tables :as t]))
 
 (defn- bracketed-lookup
   "
