@@ -173,6 +173,10 @@ resource "aws_cloudwatch_event_target" "target5min" {
 }
 
 
+data "aws_route53_zone" "selected" {
+  name         = "invisiblesuns.com."
+}
+
 output "url" {
   value = "${aws_api_gateway_deployment.proxy_deployment.invoke_url}"
 }

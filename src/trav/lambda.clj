@@ -4,10 +4,11 @@
             [clojure.pprint]
             [clojure.walk]
             [trav.chars :as chr]
+            [trav.worlds.core :as w]
             [uswitch.lambada.core :refer [deflambdafn]]))
 
 
-(defn lambda-output [n lang]
+(defn lambda-output [type_ n lang]
   (condp = lang
     "english" (->> (for [char (repeatedly n chr/make-living-character)]
                      (->> [(chr/format-name-map char)
@@ -34,7 +35,8 @@
                         clojure.walk/keywordize-keys
                         :queryStringParameters)
         language (:lang params)
-        n (or (some-> params :n Integer.) 10)]
+        n (or (some-> params :n Integer.) 10)
+        type_ (or (get params :type) "chars")]
     (json/generate-stream
      {:statusCode 200
       :headers {"Content-Type"
@@ -42,6 +44,6 @@
                   "english" "text/plain"
                   "edn" "text/plain"
                   "application/json")}
-      :body (lambda-output n language)}
+      :body (lambda-output type_ n language)}
      (clojure.java.io/writer out)
      {:pretty true})))

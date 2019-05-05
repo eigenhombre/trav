@@ -2,9 +2,7 @@
         eigenhombre/namejen {:mvn/version "0.1.14"}
         uswitch/lambada {:mvn/version "0.1.2"}
         cheshire {:mvn/version "5.8.1"}}
- :aliases {:uberjar {:extra-deps {seancorfield/depstar {:mvn/version "RELEASE"}}
-                     :main-opts ["-m" "hf.depstar.uberjar" "trav.jar"]}
-           :kibit
+ :aliases {:kibit
            {:extra-deps {lein-kibit {:mvn/version "RELEASE"}
                          jonase/kibit {:mvn/version "RELEASE"}}
             :extra-paths ["lint"]

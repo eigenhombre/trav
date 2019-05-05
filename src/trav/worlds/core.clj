@@ -566,17 +566,19 @@
 
 (defn update-non-main-world [main-world-government
                              main-world-law-level
-                             main-world-tech-level x]
+                             main-world-tech-level
+                             x]
   (if-not (and (map? x)
                (#{:planet :satellite :planetoid}
                 (:type_ x))
                (not (:is-main-world? x)))
     x
-    (let [govt (cond
+    (let [population (or (:population x) 0)
+          govt (cond
+                 (zero? population) 0
                  (= main-world-government 6) 6
                  (> main-world-government 6) (+ (d 1) 2)
                  :else (d 1))
-          population (or (:population x) 0)
           spaceport (bracketed-lookup t/spaceports (+ (d 1)
                                                       (cond
                                                         (> population 5) 2
