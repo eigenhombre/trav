@@ -248,6 +248,16 @@
                 inc)]
       (str/join " " (repeatedly n generic-name)))))
 
+(defn belt-name []
+  (str (rand-nth ["Planetoid"
+                  "Planetoid"
+                  "Planetoid"
+                  "Planetoid"
+                  "Asteroid"
+                  "Asteroid"
+                  "Minor planet"])
+       " belt " (generic-name)))
+
 ;; FIXME: GGs CAN be in the inner zones if habitable and outer orbits
 ;; are filled.
 (defn place-ggs [{:keys [orbits] :as star}]
@@ -305,7 +315,7 @@
                               (take num-planetoids)
                               (map (fn [m] (assoc m
                                                   :type_ :planetoid
-                                                  :name_ "Planetoid belt"
+                                                  :name_ (belt-name)
                                                   :atmosphere 0
                                                   :hydrographics 0
                                                   :population (population
