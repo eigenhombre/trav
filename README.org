@@ -21,14 +21,6 @@ The code here can be used (so far) for character generation; see
 
 For the moment, you'll need to check out this repo.
 
-Or...
-** ... try it out!
-I [[https://github.com/eigenhombre/trav/blob/master/tf/terraform.tf][deployed]] (via [[https://www.terraform.io/][Terraform]] and AWS) a working example in the form of an API:
-
-| English                   | https://cbn1afevhh.execute-api.us-east-1.amazonaws.com/production?lang=english |
-| JSON                      | https://cbn1afevhh.execute-api.us-east-1.amazonaws.com/production              |
-| edn (Clojure data format) | https://cbn1afevhh.execute-api.us-east-1.amazonaws.com/production?lang=edn     |
-
 * Why?
 
 - To experiment with using small DSLs [[https://github.com/eigenhombre/trav/blob/master/src/trav/chars.clj#L85][(example)]] to represent RPG rules
