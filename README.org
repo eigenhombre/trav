@@ -1,8 +1,6 @@
 #+TITLE: Traveller Character and World Generation in Clojure
 #+OPTIONS: toc:nil num:nil
 
-[[https://travis-ci.org/eigenhombre/trav][https://travis-ci.org/eigenhombre/trav.svg]]
-
 Clojure libraries for generating random characters and star systems
 for [[http://en.wikipedia.org/wiki/Traveller_(role-playing_game)][Traveller]], a popular '80s-era science fiction role playing game
 (RPG) still being used today.
