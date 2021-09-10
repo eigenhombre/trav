@@ -89,7 +89,7 @@ Books for now (Scouts, Mercenary and High Guard OK).
 #+NAME: Usage
 * Usage
 
-See the [[https://github.com/eigenhombre/trav/blob/master/src/trav/char.clj][functions and examples]] in the =trav.char= namespace.  Or, roll
+See the [[https://github.com/eigenhombre/trav/blob/master/src/trav/chars.clj][functions and examples]] in the =trav.char= namespace.  Or, roll
 up a few characters on the command line:
 
 #+BEGIN_EXAMPLE
