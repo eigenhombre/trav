@@ -1,12 +1,13 @@
+SOURCES := $(shell find src -name '*.clj')
+
 .PHONY: all
-all: uberjar
+all: uber
 
-.PHONY: uberjar
-uberjar:
-	make target/trav.jar
+.PHONY: uber
+uber: trav.jar
 
-target/trav.jar: src/trav/*.clj
-	lein überjar
+trav.jar: $(SOURCES) deps.edn build.clj
+	clojure -T:build uber
 
 .PHONY: deps
 deps:
@@ -25,6 +26,23 @@ lint:
 format:
 	cljfmt fix src
 
+.PHONY: test
+test:
+	clojure -M:test
+
+.PHONY: install
+install: trav.jar
+	@if [ ! -d "$${BINDIR:-$$HOME/bin}" ]; then \
+		echo "Error: Install directory $${BINDIR:-$$HOME/bin} does not exist."; \
+		echo "Please create it or set BINDIR to an existing directory."; \
+		exit 1; \
+	fi
+	cp trav trav.jar $${BINDIR:-$$HOME/bin}/
+
+.PHONY: run
+run:
+	clojure -M:run
+
 .PHONY: clean
 clean:
-	rm target/trav.jar
+	rm -rf target/ trav.jar .cpcache/
