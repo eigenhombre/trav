@@ -1,6 +1,7 @@
 (ns trav.core
   (:gen-class)
-  (:require [trav.chars :refer [make-living-character
+  (:require [clojure.string :as str]
+            [trav.chars :refer [make-living-character
                                 format-name-map
                                 format-skills
                                 format-swag]]
@@ -27,25 +28,32 @@
                               (remove (comp zero? first)))]
                      (repeat n name_))))))
 
-(defn -main [& [nstr & _]]
-  #_(let [n (if nstr (Integer/parseInt nstr) 50)]
-      (doseq [char (repeatedly n make-living-character)]
-        (->> [(format-name-map char)
-              (format-skills char)
-              (format-swag char)]
-             (remove empty?)
-             (interpose "\n")
-             (concat ["\n"])
-             (apply str)
-             println)))
+(defn char-str [character]
+  (str/join "\n\t" [(format-name-map character)
+                    (format-skills character)
+                    (format-swag character)]))
 
+(defn -main [& [arg]]
   (let [char (make-living-character)
         system (gen-system)]
-    (println "Your character:")
-    (println "\t" (format-name-map char))
-    (println "\t" (format-skills char))
-    (println "\t" (format-swag char))
-    (println "\n\n\n")
-    (println "Your system:")
-    (println (system-str system))
-    (println "\nYour current location:" (find-character-location system))))
+    (cond
+      (#{"char" "chr" "character"} arg)
+      (println (char-str char))
+
+      (#{"sys" "system"} arg)
+      (println (system-str system))
+
+      :else
+      (do
+        (println "Your character:")
+        (println (char-str char))
+        (println "\n\n\n")
+        (println "Your system:")
+        (println (system-str system))
+        (println "\nYour current location:" (find-character-location system))))))
+
+(comment
+  (-main)
+
+  (-main "char")
+  (-main "sys"))

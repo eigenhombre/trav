@@ -1,8 +1,5 @@
 SOURCES := $(shell find src -name '*.clj')
 
-.PHONY: all
-all: uber
-
 .PHONY: uber
 uber: trav.jar
 
