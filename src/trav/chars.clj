@@ -11,10 +11,8 @@
             [trav.macros :refer :all]
             [trav.util :refer [hexish-code take-until keywordize]]))
 
-
 (defcoll attributes ST DX EN IN ED SS)
 (defcoll services navy marines army scouts merchant other)
-
 
 (def-service-table enlistment
   navy     8 [IN 8 -> +1, ED 9 -> +2]
@@ -24,7 +22,6 @@
   merchant 7 [ST 7 -> +1, IN 6 -> +2]
   other    3 [])
 
-
 (def-service-table survival
   navy     5 [IN 7 -> +2]
   marines  6 [EN 8 -> +2]
@@ -32,7 +29,6 @@
   scouts   7 [EN 9 -> +2]
   merchant 5 [IN 7 -> +2]
   other    5 [IN 9 -> +2])
-
 
 (def-service-table commission
   navy     10 [SS 9 -> +1]
@@ -42,7 +38,6 @@
   merchant 4  [IN 6 -> +1]
   other    -  [])
 
-
 (def-service-table promotion
   navy     8  [ED 8 -> +1]
   marines  9  [SS 8 -> +1]
@@ -50,7 +45,6 @@
   scouts   -  []
   merchant 10 [IN 9 -> +1]
   other    -  [])
-
 
 (def-service-table reinlist
   navy     6 []
@@ -60,7 +54,6 @@
   merchant 4 []
   other    5 [])
 
-
 (def-selection-table ranks
   navy     Ensign     Lieutenant LtCmdr    Commander Captain Admiral
   marines  Lieutenant Captain    ForceCmdr LtColonel Colonel Brigadier
@@ -68,7 +61,6 @@
   scouts   -          -          -         -         -       -
   merchant FourthOffc ThirdOffc  SecndOffc FirstOffc Captain -
   other    -          -          -         -         -       -)
-
 
 (def-aging-table aging
   ST {34 [-1 8]
@@ -82,9 +74,8 @@
       66 [-2 9]}
   IN {66 [-1 9]})
 
-
 (def-rnd-selection-table personal-development-table
-          navy   marines        army     scouts   merchant      other
+  navy   marines        army     scouts   merchant      other
   1       ST+1       ST+1       ST+1       ST+1       ST+1       ST+1
   2       DX+1       DX+1       DX+1       DX+1       DX+1       DX+1
   3       EN+1       EN+1       EN+1       EN+1       EN+1       EN+1
@@ -92,9 +83,8 @@
   5       IN+1   Brawling   Brawling       IN+1   BladeCbt   Brawling
   6       ED+1   BladeCbt       ED+1       ED+1   Brawling       SS-1)
 
-
 (def-rnd-selection-table service-skills-table
-          navy   marines        army     scouts   merchant      other
+  navy   marines        army     scouts   merchant      other
   1  ShipsBoat       ATV         ATV    AirRaft    Steward    Forgery
   2   VaccSuit  VaccSuit     AirRaft   VaccSuit   VaccSuit   Gambling
   3    FwdObsv  BladeCbt     FwdObsv Navigation       ST+1   Brawling
@@ -102,9 +92,8 @@
   5     GunCbt    GunCbt      GunCbt Electronic Electronic     GunCbt
   6    Gunnery    GunCbt      GunCbt   Jack-o-T   Jack-o-T    Bribery)
 
-
 (def-rnd-selection-table advanced-education-table
-          navy    marines       army     scouts   merchant      other
+  navy    marines       army     scouts   merchant      other
   1   VaccSuit        ATV        ATV    AirRaft Streetwise Streetwise
   2 Mechanical Mechanical Mechanical Mechanical Mechanical Mechanical
   3 Electronic Electronic Electronic Electronic Electronic Electronic
@@ -112,9 +101,8 @@
   5    Gunnery   BladeCbt   BladeCbt    Gunnery    Gunnery   Brawling
   6   Jack-o-T     GunCbt     GunCbt    Medical    Medical    Forgery)
 
-
 (def-rnd-selection-table advanced-education-table-2
-          navy    marines       army     scouts   merchant      other
+  navy    marines       army     scouts   merchant      other
   1    Medical    Medical    Medical    Medical    Medical    Medical
   2 Navigation    Tactics    Tactics Navigation Navigation    Forgery
   3    Engnrng    Tactics    Tactics    Engnrng    Engnrng Electronic
@@ -122,18 +110,15 @@
   5      Pilot     Leader     Leader      Pilot      Pilot Streetwise
   6      Admin      Admin      Admin   Jack-o-T      Admin   Jack-o-T)
 
-
 (def blades '(Dagger Blade Foil Cutlass Sword Broadsword
-              Spear Halberd Pike Cudgel Bayonet))
-
+                     Spear Halberd Pike Cudgel Bayonet))
 
 (def guns '(BodyPistol AutomaticPistol Revolver Carbine Rifle
-            LaserCarbine LaserRifle AutomaticRifle SMG Shotgun))
-
+                       LaserCarbine LaserRifle AutomaticRifle SMG Shotgun))
 
 ;; Mustering out / benefits tables
 (def-rnd-selection-table material-benefits
-          navy    marines       army     scouts   merchant      other
+  navy    marines       army     scouts   merchant      other
   1     LowPsg     LowPsg     LowPsg     LowPsg     LowPsg     LowPsg
   2       IN+1       IN+2       IN+1       IN+2       IN+1       IN+1
   3       ED+2       ED+1       ED+2       ED+2       ED+1       ED+1
@@ -142,9 +127,8 @@
   6    HighPsg    HighPsg     MidPsg      Scout     LowPsg          -
   7       SS+2       SS+2       SS+1          -   Merchant          -)
 
-
 (def-rnd-selection-table cash-allowances
-          navy    marines       army     scouts   merchant      other
+  navy    marines       army     scouts   merchant      other
   1       1000       2000       2000      20000       1000       1000
   2       5000       5000       5000      20000       5000       5000
   3       5000       5000      10000      30000      10000      10000
@@ -153,14 +137,12 @@
   6      50000      30000      20000      50000      40000      50000
   7      50000      40000      30000      50000      40000     100000)
 
-
 (defn roll-with-stats-dms-succeeds? [base-roll dms stats]
   (let [applicable-dms (apply +
                               (for [{:keys [attr thresh dm]} dms
                                     :when (>= (stats attr) thresh)]
                                 dm))]
     (>= (+ applicable-dms (d 2)) base-roll)))
-
 
 (defn determine-service [stats]
   (let [desired-service (rand-nth services)
@@ -176,7 +158,6 @@
      :drafted? (not success?)
      :actual-service actual-service}))
 
-
 (defn char-attr-map
   "
   Generate random character attributes (ST, DX, etc.) using 2D each.
@@ -186,7 +167,6 @@
        repeatedly
        (take (count attributes))
        (zipmap attributes)))
-
 
 (defn starting-character
   "
@@ -215,7 +195,6 @@
             :memberships #{}
             :pension-annual 0
             :rank-name nil})))
-
 
 ;; Examples:
 (->> starting-character
@@ -273,9 +252,6 @@
   :gender :female,
   :attributes {:ss 12, :ed 4, :in 6, :en 7, :dx 5, :st 7}}]
 
-
-
-
 (defn upp [char]
   (->> char
        :attributes
@@ -283,16 +259,13 @@
        (map hexish-code)
        (apply str)))
 
-
 (defn format-skills [{skills :skills}]
   (->> skills
        (map (fn [[a b]] (format "%s-%s" a b)))
        (interpose ", ")
        (apply str)))
 
-
 (defn as-syms [s] (vec (map symbol (clojure.string/split s #" "))))
-
 
 (defn roll-for-service-table-succeeds? [table char]
   (let [stats (:attributes char)
@@ -300,7 +273,6 @@
                                      :actual-service
                                      table)]
     (roll-with-stats-dms-succeeds? base-roll dms stats)))
-
 
 (defn attribute-change
   "
@@ -310,8 +282,7 @@
   [sym]
   (if-let [[_ sattr snum] (->> sym name (re-find #"(\w{2})([+-]\d+)"))]
     {:attr (keywordize sattr)
-     :delta (Integer. snum)}))
-
+     :delta (Integer/parseInt snum)}))
 
 (defn specialize [skill]
   (condp = skill
@@ -319,12 +290,10 @@
     'GunCbt (rand-nth guns)
     skill))
 
-
 (defn add-actual-skill [char skill]
   (if-let [{attr :attr, delta :delta} (attribute-change skill)]
     (update-in char [:attributes attr] + delta)
     (update-in char [:skills (specialize skill)] (fnil inc 0))))
-
 
 (defn select-skill-table [{{ed :ed} :attributes}]
   (->> [personal-development-table
@@ -334,13 +303,11 @@
        (take (if (>= ed 8) 4 3))
        rand-nth))
 
-
 (defn add-skill [{:keys [actual-service living?] :as char}]
   (if-not living?
     char
     (let [skill (-> (select-skill-table char) actual-service rand-nth)]
       (add-actual-skill char skill))))
-
 
 (defn add-skills-for-service-term
   "
@@ -351,25 +318,23 @@
     (-> char add-skill add-skill)
     (add-skill char)))
 
-
 (defn add-automatic-skills-for-rank [{service :actual-service
                                       rank-name :rank-name
                                       :as char}]
   (cond
-   (and (= service :navy) (= rank-name "Captain")) (add-actual-skill char 'SS+1)
-   (and (= service :navy) (= rank-name "Admiral")) (add-actual-skill char 'SS+1)
+    (and (= service :navy) (= rank-name "Captain")) (add-actual-skill char 'SS+1)
+    (and (= service :navy) (= rank-name "Admiral")) (add-actual-skill char 'SS+1)
 
-   (and (= service :marines) (= rank-name "Lieutenant"))
-   (add-actual-skill char 'Revolver)
+    (and (= service :marines) (= rank-name "Lieutenant"))
+    (add-actual-skill char 'Revolver)
 
-   (and (= service :army) (= rank-name "Lieutenant"))
-   (add-actual-skill char 'SMG)
+    (and (= service :army) (= rank-name "Lieutenant"))
+    (add-actual-skill char 'SMG)
 
-   (and (= service :merchant) (= rank-name "FirstOffc"))
-   (add-actual-skill char 'Pilot)
+    (and (= service :merchant) (= rank-name "FirstOffc"))
+    (add-actual-skill char 'Pilot)
 
-   :else char))
-
+    :else char))
 
 (defn add-automatic-skills [{service :actual-service :as char}]
   (condp = service
@@ -377,7 +342,6 @@
     :army (add-actual-skill char 'Rifle)
     :scouts (add-actual-skill char 'Pilot)
     char))
-
 
 (defn maybe-increase-rank [char]
   (let [rank-vals (vec (ranks (:actual-service char)))
@@ -390,7 +354,6 @@
           add-skill)
       char)))
 
-
 (defn qualified-for-commission?
   "
   Draftees in their first term of service are not eligible for
@@ -400,29 +363,26 @@
   (or (not (:drafted? char))
       (> (:terms-reached char) 1)))
 
-
 (defn maybe-promote [char]
   (cond
-   (not (:living? char)) char
-   (:commissioned? char) (if (roll-for-service-table-succeeds?
-                              promotion char)
-                           (maybe-increase-rank char)
-                           char)
-   :else (if (and (qualified-for-commission? char)
-                  (roll-for-service-table-succeeds? commission char))
-           (-> char
-               (assoc :commissioned? true)
-               add-skill
-               maybe-increase-rank)
-           char)))
-
+    (not (:living? char)) char
+    (:commissioned? char) (if (roll-for-service-table-succeeds?
+                               promotion char)
+                            (maybe-increase-rank char)
+                            char)
+    :else (if (and (qualified-for-commission? char)
+                   (roll-for-service-table-succeeds? commission char))
+            (-> char
+                (assoc :commissioned? true)
+                add-skill
+                maybe-increase-rank)
+            char)))
 
 (defn maybe-kill [char]
   (if (and (:living? char)
            (not (roll-for-service-table-succeeds? survival char)))
     (assoc char :living? false)
     char))
-
 
 (defn maybe-reinlist [char]
   (if-not (:living? char)
@@ -437,7 +397,6 @@
                            (and wants-to-reinlist (>= roll base-roll)))]
       (assoc char :reinlisting? reinlisting?))))
 
-
 (defn handle-age-induced-illness
   "
   If attr drops below 1, see if death occurs (fail 8+ throw); if not,
@@ -451,7 +410,6 @@
                     (assoc :living? false)
                     (assoc-in [:attributes attr] 0)))))
 
-
 (defn apply-age-to-attribute [char attr]
   (let [age (:age char)
         {[delta throw-required] age} (attr aging)]
@@ -461,28 +419,23 @@
           (handle-age-induced-illness attr))
       char)))
 
-
 (defn maybe-damage-for-age [char]
   (reduce apply-age-to-attribute char (keys aging)))
-
 
 (defn age-one-year [char]
   (-> char
       (update-in [:age] inc)
       maybe-damage-for-age))
 
-
 (defn age-one-term [char]
   (->> char
        (iterate age-one-year)
        (#(nth % 4))))
 
-
 (defn increment-service-term [{:keys [terms-reached] :as char}]
   (if (nil? terms-reached)
     (assoc char :terms-reached 1)
     (update-in char [:terms-reached] inc)))
-
 
 (defn apply-term-of-service [char]
   (-> char
@@ -493,14 +446,12 @@
       maybe-reinlist
       age-one-term))
 
-
 (defn- specify-blade [char possession]
   (if (= possession 'Blade)
     (let [skills (keys (:skills char))
           match (some (set skills) blades)]
       (or match (rand-nth blades)))
     possession))
-
 
 (defn- specify-gun [char possession]
   (if (= possession 'Gun)
@@ -509,12 +460,10 @@
       (or match (rand-nth guns)))
     possession))
 
-
 (defn- calc-pension [terms-served]
   (if (< terms-served 5)
     0
     (+ 2000 (* 2000 (- terms-served 4)))))
-
 
 (defn muster-out
   "
@@ -566,7 +515,6 @@
           (update-in [:possessions] concat possessions)
           (assoc :pension-annual (calc-pension terms))))))
 
-
 (defn make-character []
   (->> (starting-character)
        add-automatic-skills
@@ -576,13 +524,11 @@
        last
        muster-out))
 
-
 (defn make-living-character []
   (->> make-character
        (repeatedly)
        (remove (complement :living?))  ;; Allow survivors only!
        first))
-
 
 (defn format-swag [{:keys [possessions
                            memberships
@@ -599,7 +545,6 @@
                                 ""
                                 (format " (%d CR annual)" pension-annual)))]))))
 
-
 ;; Adapted from eigenhombre/namejen:
 (defn format-name-map [{:keys [gender
                                prefix
@@ -613,9 +558,9 @@
                                attributes] :as char}]
   (let [prefix (or rank-name prefix)]
     (clojure.string/join `(~@(when prefix [prefix " "])
-                           ~@ (when (and royal-form
-                                         (seq surnames))
-                                [royal-form " "])
+                           ~@(when (and royal-form
+                                        (seq surnames))
+                               [royal-form " "])
                            ~first-name
                            ~(if (seq surnames) " " "")
                            ~@(interpose " " surnames)
@@ -628,7 +573,6 @@
                               ""
                               (str (name actual-service) ", "))
                            ~(upp char)))))
-
 
 ;; Example - character names + UPPs:
 (->> starting-character
@@ -648,7 +592,6 @@
  "Ms. Utta Miro Jussi Byron (F), 18 yrs. old, navy, 7768AA"
  "Nalistancey Trian Dwight Rtha (F), 18 yrs. old, 988789"
  "Lyde Indranath (M), 18 yrs. old, navy, 782665"]
-
 
 ;; Example - full characters with name, rank, age and UPP:
 (->> make-living-character
@@ -810,7 +753,6 @@
   "VaccSuit-1, FwdObsv-1, Computer-1, Mechanical-1, Jack-o-T-1, Gunnery-3"
   "Cutlass, HighPsg, HighPsg, HighPsg, Travellers, 15000 CR (6000 CR annual)"]]
 
-
 ;; Single character, w/ all metadata:
 (def our-character (make-character))
 
@@ -840,24 +782,20 @@ our-character
   :gender :male,
   :attributes {:ss 10, :ed 5, :in 9, :en 7, :dx 9, :st 3}}
 
-
 (format-name-map our-character)
 
 ;;=>
 "Lieutenant Nelius Eidi, I (M), 30 yrs. old, navy, 39795A"
-
 
 (format-skills our-character)
 
 ;;=>
 "Electronic-2, Gunnery-1, Engnrng-1, Mechanical-1, Dagger-1"
 
-
 (format-swag our-character)
 
 ;;=>
 "Dagger, HighPsg, 55000 CR"
-
 
 (comment
 

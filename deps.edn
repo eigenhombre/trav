@@ -1,30 +1,27 @@
-{:deps {org.clojure/clojure {:mvn/version "1.10.0"}
-        eigenhombre/namejen {:mvn/version "0.1.14"}
-        uswitch/lambada {:mvn/version "0.1.2"}
-        cheshire {:mvn/version "5.8.1"}}
- :aliases {:kibit
-           {:extra-deps {lein-kibit {:mvn/version "RELEASE"}
-                         jonase/kibit {:mvn/version "RELEASE"}}
-            :extra-paths ["lint"]
-            :main-opts ["-m" "kibit"]}
-           :eastwood
-           {:main-opts ["-m" "eastwood.lint" "{:source-paths,[\"src\"]}"]
-            :extra-deps {jonase/eastwood {:mvn/version "RELEASE"}}}
+{:paths ["src" "resources"]
+ :deps {org.clojure/clojure {:mvn/version "1.12.5"}
+        clj-http/clj-http {:mvn/version "3.13.1"}
+        org.clojure/data.csv {:mvn/version "1.1.1"}
+        eigenhombre/namejen {:mvn/version "0.1.23"}
+        cheshire/cheshire {:mvn/version "6.2.0"}
+        org.slf4j/slf4j-nop {:mvn/version "2.0.18"}}
+ :aliases {:run {:main-opts ["-m" "trav.core"]}
+           :build {:deps {io.github.clojure/tools.build
+                          {:git/tag "v0.10.5"
+                           :git/sha "2a21b7a"}}
+                   :ns-default build}
+           :kibit {:extra-deps {lein-kibit/lein-kibit {:mvn/version "RELEASE"}
+                                jonase/kibit {:mvn/version "RELEASE"}}
+                   :extra-paths ["lint"]
+                   :main-opts ["-m" "kibit"]}
+           :eastwood {:main-opts ["-m" "eastwood.lint" "{:source-paths,[\"src\"]}"]
+                      :extra-deps {jonase/eastwood {:mvn/version "RELEASE"}}}
            :outdated {:extra-deps {olical/depot {:mvn/version "RELEASE"}}
                       :main-opts ["-m" "depot.outdated.main"]}
-           :chars {:main-opts ["-m" "trav.core"]}
            :test {:extra-paths ["test"]
                   :extra-deps {com.cognitect/test-runner
                                {:git/url
                                 "https://github.com/Olical/test-runner.git"
                                 :sha
                                 "7c4f5bd4987ec514889c7cd7e3d13f4ef95f256b"}}
-                  :main-opts ["-m" "cognitect.test-runner"]}
-           :aot  ;; See https://github.com/juxt/pack.alpha#lambda:
-           {:extra-paths ["classes"]
-            :main-opts ["-e" "(compile,'trav.lambda)"]}
-           :pack {:extra-deps
-                  {pack/pack.alpha
-                   {:git/url "https://github.com/juxt/pack.alpha.git"
-                    :sha "24863d1ff5a54bb7cc783ff62272212b51c8b316"}}
-                  :main-opts ["-m"]}}}
+                  :main-opts ["-m" "cognitect.test-runner"]}}}

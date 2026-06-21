@@ -7,7 +7,6 @@
             [trav.worlds.core :refer [gen-system
                                       system-str]]))
 
-
 (defn find-character-location [system]
   (let [satellite-fields (comp (partial mapcat
                                         (juxt :population :name_))
@@ -28,7 +27,6 @@
                               (remove (comp zero? first)))]
                      (repeat n name_))))))
 
-
 (defn -main [& [nstr & _]]
   #_(let [n (if nstr (Integer/parseInt nstr) 50)]
       (doseq [char (repeatedly n make-living-character)]
@@ -47,6 +45,7 @@
     (println "\t" (format-name-map char))
     (println "\t" (format-skills char))
     (println "\t" (format-swag char))
+    (println "\n\n\n")
     (println "Your system:")
     (println (system-str system))
     (println "\nYour current location:" (find-character-location system))))

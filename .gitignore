@@ -1,6 +1,7 @@
 *.jar
 *.zip
 .cpcache
+.eastwood
 .nrepl-port
 /.lein-deps-sum
 /.lein-failures

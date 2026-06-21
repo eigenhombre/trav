@@ -1,9 +1,8 @@
-(ns trav.util)
-
+(ns trav.util
+  (:require [clojure.string :as str]))
 
 (def ^:private base-ord
   (- (int (.charAt "A" 0)) 10))
-
 
 (defn hexish-code [x]
   {:pre [(> x -1), (< x 36)]}
@@ -14,16 +13,14 @@
          char
          str)))
 
-
 (defn take-until [f [x & xs]]
   (lazy-seq
    (cons x (if (or (f x) (nil? xs))
              nil
              (take-until f xs)))))
 
-
 (defn keywordize [s]
   (-> s
       name
-      (#(.toLowerCase %))
+      str/lower-case
       keyword))

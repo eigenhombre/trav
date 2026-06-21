@@ -309,7 +309,7 @@
         num-ggs (count gg-orbits)
         present? (= 'yes (t/planetoid-present (- (d) num-ggs)))
         num-planetoids (min (count available-orbits)
-                            (or (t/planetoid-qty (- (d) 0 num-ggs )) 0))
+                            (or (t/planetoid-qty (- (d) 0 num-ggs)) 0))
         shuffled (shuffle orbits)
         planetoid-orbits (->> shuffled
                               (take num-planetoids)

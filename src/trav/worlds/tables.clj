@@ -240,5 +240,5 @@
 
 (defn expand-dm-field [orbit-lookup-result]
   (if-let [[_ dm] (re-find #"D1\+(\d+)" (str orbit-lookup-result))]
-    (+ (Integer. dm) (d 1))
+    (+ (Integer/parseInt dm) (d 1))
     orbit-lookup-result))

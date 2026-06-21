@@ -8,10 +8,8 @@
   "
   (:require [trav.util :refer [keywordize]]))
 
-
 (defmacro defcoll [name & syms]
   `(def ~name (map keywordize (quote ~syms))))
-
 
 (defn row-vec [[service base-roll dms]]
   [(keyword service) {:base-roll (if (= base-roll '-)
@@ -23,7 +21,6 @@
                                    :dm dm})
                                 (partition 4 dms))}])
 
-
 (defmacro def-service-table [tname & service-rows]
   `(do (def ~tname
          (->> (quote ~(partition 3 service-rows))
@@ -31,13 +28,12 @@
               (apply hash-map)))
        ~tname))
 
-
-(defn nil-if-dash [symb] (if (= symb '-) nil symb))
-
+(defn nil-if-dash [symb]
+  (when-not (= '- symb)
+    symb))
 
 (defn selection-row-vec [[svc & elts]]
   [(keyword svc) (map nil-if-dash elts)])
-
 
 (defmacro def-selection-table [tname & rows]
   `(do (def ~tname
@@ -47,7 +43,6 @@
               (apply hash-map)))
        ~tname))
 
-
 (defmacro def-aging-table [tname & rows]
   `(do (def ~tname
          (->> '~rows
@@ -56,7 +51,6 @@
               (map (fn [s#] (if (symbol? s#) (keywordize s#) s#)))
               (apply hash-map)))
        ~tname))
-
 
 (defmacro def-rnd-selection-table [tname & data]
   `(do
@@ -73,12 +67,10 @@
               (apply (partial merge-with (comp vec concat))))))
      ~tname))
 
-
 (defn- expand-sym [sym]
   (if-let [[_ s e] (re-find #"r(\d+)-(\d+)" (str sym))]
-    [(Integer. s) (Integer. e)]
+    [(Integer/parseInt s) (Integer/parseInt e)]
     [sym sym]))
-
 
 (defn expand [[sym val]]
   (let [[start end] (expand-sym sym)]
@@ -92,7 +84,6 @@
                         (map expand)
                         (apply merge)))
        ~tname))
-
 
 (defmacro def-zone-table [tname & body]
   `(do
@@ -109,7 +100,6 @@
               (interleave (map first rows#))
               (apply hash-map))))
      ~tname))
-
 
 (defmacro evalq
   "
