@@ -36,6 +36,10 @@ install: trav.jar
 	fi
 	cp trav trav.jar $${BINDIR:-$$HOME/bin}/
 
+.PHONY: docker
+docker:
+	docker build -t trav .
+
 .PHONY: run
 run:
 	clojure -M:run

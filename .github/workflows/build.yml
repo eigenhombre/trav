@@ -1,0 +1,23 @@
+name: Build
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: make docker
+      - name: Play success sound
+        if: success()
+        run: |
+          if [ -x "$HOME/bin/success-sound" ]; then
+            "$HOME/bin/success-sound" || true
+          fi
+      - name: Play failure sound
+        if: failure()
+        run: |
+          if [ -x "$HOME/bin/failure-sound" ]; then
+            "$HOME/bin/failure-sound" || true
+          fi
