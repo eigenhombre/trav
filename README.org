@@ -14,20 +14,9 @@ many people's favorite.  It was produced in the 1980s as a series of
 "Little Black Books" (LBBs) -- 3 core books, plus a series of rule
 expansions, playing scenarios, and related data.
 
-The code here can be used (so far) for character generation; see
-[[Usage]], below.  Star system generation functionality is in progress!
-
 * Getting it
 
 For the moment, you'll need to check out this repo.
-
-Or...
-** ... try it out!
-I [[https://github.com/eigenhombre/trav/blob/master/tf/terraform.tf][deployed]] (via [[https://www.terraform.io/][Terraform]] and AWS) a working example in the form of an API:
-
-| English                   | https://cbn1afevhh.execute-api.us-east-1.amazonaws.com/production?lang=english |
-| JSON                      | https://cbn1afevhh.execute-api.us-east-1.amazonaws.com/production              |
-| edn (Clojure data format) | https://cbn1afevhh.execute-api.us-east-1.amazonaws.com/production?lang=edn     |
 
 * Why?
 
@@ -43,13 +32,9 @@ I [[https://github.com/eigenhombre/trav/blob/master/tf/terraform.tf][deployed]] 
   detailed rules provided by the game designers;
 - To tune and refine my [[https://github.com/eigenhombre/namejen][Markov-chain-based Character Name Generator]];
 - As a launching point for other game experiments;
-- Because it's fun!
-* Status
-
-/This software is very alpha./ APIs, namespaces, usage, etc. will
-probably all change.
 
 ** What's Done
+
 - Character generation à la LBB #1.
   - Name selection, using [[https://github.com/eigenhombre/namejen][Namejen]].
   - Service determination
@@ -65,7 +50,7 @@ probably all change.
 
 ** What's Next
 
-Finish star system generation.
+Flesh out / finish star system generation.
 
 ** Future Ideas
 
@@ -90,6 +75,7 @@ Finish star system generation.
   - Character (1-1, armies)
   - Ship (1-1, fleets)
 - ...
+
 * Contributing
 
 Pull requests welcome, but only for Classic Traveller, please.  I'm
@@ -97,13 +83,14 @@ trying to stay within the constraints of the original Little Black
 Books for now (Scouts, Mercenary and High Guard OK).
 
 #+NAME: Usage
+
 * Usage
 
 See the [[https://github.com/eigenhombre/trav/blob/master/src/trav/char.clj][functions and examples]] in the =trav.char= namespace.  Or, roll
 up a few characters on the command line:
 
 #+BEGIN_EXAMPLE
-$  clojure -A:chars 10
+$ trav chars 10
 
 Ubin Traka Ramsey Berta (M), 22 yrs. old, navy, 6987A7
 Cudgel-1
@@ -148,10 +135,8 @@ Spear, 41000 CR (6000 CR annual)
 $
 #+END_EXAMPLE
 
-The main method takes an arbitrary integer number of characters to
-generate (default 50).
+* REPL Exploration
 
-Example from the REPL:
 #+BEGIN_SRC clojure
 ;; Single character, w/ all metadata:
 (def our-character (make-character))
@@ -241,7 +226,7 @@ trademarks. In addition, any program/articles/file on this site cannot
 be republished or distributed without the consent of the author who
 contributed it.
 
-The code in this repository is Copyright (C) 2012-2015 John Jacobsen,
+The code in this repository is Copyright (C) 2012-2026 John Jacobsen,
 and distributed under the Eclipse Public License, the same as Clojure.
 
 THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,

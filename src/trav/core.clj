@@ -33,27 +33,39 @@
                     (format-skills character)
                     (format-swag character)]))
 
-(defn -main [& [arg]]
-  (let [char (make-living-character)
-        system (gen-system)]
-    (cond
-      (#{"char" "chr" "character"} arg)
+(defmacro do-n [maybe-n & body]
+  `(let [n# ~maybe-n
+         strn# (str n#)
+         n# (or (when (seq strn#)
+                  (Integer/parseInt strn#))
+                1)]
+     (dotimes [_# n#]
+       ~@body)))
+
+(defn -main [& [arg n]]
+  (cond
+    (#{"char" "chr" "character" "characters" "chars" "chrs"} arg)
+    (do-n n
+      (println (char-str (make-living-character))))
+
+    (#{"sys" "system" "systems"} arg)
+    (do-n n
+      (println (system-str (gen-system))))
+
+    :else
+    (let [char (make-living-character)
+          system (gen-system)]
+      (println "Your character:")
       (println (char-str char))
-
-      (#{"sys" "system"} arg)
+      (println "\n\n\n")
+      (println "Your system:")
       (println (system-str system))
-
-      :else
-      (do
-        (println "Your character:")
-        (println (char-str char))
-        (println "\n\n\n")
-        (println "Your system:")
-        (println (system-str system))
-        (println "\nYour current location:" (find-character-location system))))))
+      (println "\nYour current location:"
+               (find-character-location system)))))
 
 (comment
   (-main)
 
-  (-main "char")
-  (-main "sys"))
+  (-main "chr")
+  (-main "chr" 10)
+  (-main "sys" 3))
